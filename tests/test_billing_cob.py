@@ -1,4 +1,4 @@
-﻿"""
+"""
 Checkout coordination-of-benefits: uninsured, commercial, Medicare, Medicaid,
 dual-eligible, and commercial+secondary. Verifies the exact ESTIMATED patient
 responsibility for each payer scenario -- this runs at checkout, before any claim, so
