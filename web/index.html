@@ -4,206 +4,343 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ---------------------------------------------------------------------------
-   Theme: palette, type and shape language taken from analyticsai.co.
-   Extracted from their live Elementor globals rather than eyeballed:
-     primary #0163E2 · accent #080F18 · text #46464D · mint #2FDA98
-     surface #F3F0EC · border #DEDEDE · muted #A4A4A8 · Jost, radius 0, no shadows
+/* ============================================================================
+   Healthcare Agentic AI — clinical operations console
+   Design language borrowed from analyticsai.co and applied to a dense workflow UI.
 
-   Mint is their signature — every CTA on the site is mint with dark text — so it
-   carries "brand + positive" here: primary buttons, completed steps, patient lane.
-   Blue carries the clinic/staff side. Two deliberate departures, both legibility:
-     * mint at #2FDA98 is ~1.8:1 on white, unreadable as small text, so mint-family
-       TEXT uses --mint-tx; the brand mint stays for fills, borders and buttons.
-     * their muted grey #A4A4A8 is ~2.5:1, so small print uses a darkened --sub and
-       #A4A4A8 is kept for decorative rules only.
-   Amber and red are functional, not brand: clinical state (in progress / critical /
-   denied) has to stay unambiguous, and their palette carries no equivalent.
-   Old variable names are kept as aliases so no markup or script changed.
---------------------------------------------------------------------------- */
+   The four things that make their site look like theirs, all verified off the live
+   site rather than guessed:
+     1. ZERO border radius. Every button on analyticsai.co is radius:0.
+     2. ZERO box shadows. Separation comes from hairline borders on a warm ground.
+     3. Jost, and crucially LIGHT weights at large sizes (their h2 is 48px/400,
+        h3 30px/400). Heavy type is reserved for tiny tracked labels. That inversion
+        is the premium signal — most dashboards do the opposite.
+     4. Mint #2FDA98 with BLACK text on it, the way all their CTAs are set.
+
+   Colour still carries meaning here, because this is an operations tool, not a
+   brochure: mint = done/positive, blue = clinic-side, amber = needs attention,
+   red = failed. Brand takes the chrome; semantics keep the signal.
+   ============================================================================ */
 :root{
- /* brand */
- --mint:#2FDA98; --mint-tx:#07694A; --mintbg:#E4FBF1;
+ /* brand, off analyticsai.co */
+ --mint:#2FDA98; --mint-dk:#22C286; --mint-tx:#07694A; --mintbg:#E4FBF1;
  --brand-blue:#0163E2; --bluebg:#E7EFFC;
- --bg:#F3F0EC; --panel:#FFFFFF; --ink:#080F18; --body:#46464D;
- --sub:#676770; --faint:#A4A4A8; --line:#DEDEDE; --line-2:#ECE9E5;
- /* functional status */
+ --ink:#080F18;            /* their dark hero */
+ --bg:#F3F0EC;             /* their warm ground */
+ --panel:#FFFFFF;
+ --body:#46464D; --sub:#676770; --faint:#A4A4A8;
+ --line:#DEDEDE; --line-2:#ECE9E5;
+ /* functional status — deliberately desaturated so mint stays the loudest colour */
  --amber:#B26A00; --amberbg:#FBF0DC; --red:#C6301C; --redbg:#FBE7E4;
- /* aliases onto the old names, so every existing rule keeps working */
+ /* type scale */
+ --t-micro:10.5px; --t-label:11px; --t-sm:12px; --t-body:13px; --t-md:15px;
+ --t-lg:20px; --t-xl:26px;
+ --track:1.6px;            /* the letter-spacing on their uppercase labels */
+ /* aliases so every pre-existing rule and any future JS keeps resolving */
  --blue:var(--brand-blue); --teal:var(--mint-tx); --tealbg:var(--mintbg);
  --purple:var(--brand-blue); --purplebg:var(--bluebg);
  --green:var(--mint-tx); --greenbg:var(--mintbg);
  --shadow:none;
 }
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--body);
- font-family:'Jost',system-ui,'Segoe UI',Arial,sans-serif;line-height:1.5;height:100vh;overflow:hidden}
-.app{max-width:1680px;height:100vh;margin:0 auto;padding:14px;display:flex;flex-direction:column}
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex:0 0 auto}
-.brand{display:flex;gap:12px;align-items:center}
-.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;display:grid;place-items:center;font-size:20px;font-weight:800}
-.title{font-size:18px;font-weight:800} .tag{font-size:12px;color:var(--sub)}
-.pill{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#eef2f7;color:var(--sub);border:1px solid var(--line)}
-.layout{display:grid;grid-template-columns:300px 1fr;gap:14px;flex:1 1 auto;min-height:0}
-.layout>aside{min-height:0}
-.layout>aside>.panel{height:100%;overflow-y:auto}
-main{display:flex;flex-direction:column;min-height:0}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
-.ph{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--sub);margin-bottom:10px}
-label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px;font-weight:600}
-select,input{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-size:13px}
-.field{margin-bottom:9px}
-button{font-family:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px}
-.primary{background:var(--blue);color:#fff;width:100%;margin-top:4px}
-.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);width:100%;margin-top:8px}
-#scn{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.scn{display:block;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer}
-.scn.active{border-color:var(--blue);background:#eff6ff} .scn .t{font-size:12px;font-weight:700} .scn .d{font-size:10px;color:var(--sub)}
-.steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.st{flex:1;min-width:112px;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:9px 11px;box-shadow:var(--shadow);position:relative}
-.st .n{font-size:12.5px;font-weight:800} .st .s{font-size:10.5px;color:var(--sub);margin-top:2px}
-.phtag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.ph-pre{color:var(--blue)} .ph-visit{color:var(--teal)} .ph-post{color:var(--purple)}
-.st.done{border-color:#bbf7d0} .st.done .s{color:var(--green)}
-.st.active{border-color:var(--amber);box-shadow:0 0 0 3px var(--amberbg)} .st.active .s{color:var(--amber);font-weight:700}
-.board{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1 1 auto;min-height:0}
-.lane{border:1.5px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;transition:.2s;display:flex;flex-direction:column;min-height:0}
-.lane .lh{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
-.badge-p{background:var(--tealbg);color:var(--teal);font-weight:800;font-size:12px;padding:4px 10px;border-radius:99px}
-.badge-s{background:var(--purplebg);color:var(--purple);font-weight:800;font-size:12px;padding:4px 10px;border-radius:99px}
-.lh .sub{font-size:11.5px;color:var(--sub)}
-.lane.patient.active{border-color:var(--teal);box-shadow:0 0 0 3px var(--tealbg)}
-.lane.staff.active{border-color:var(--purple);box-shadow:0 0 0 3px var(--purplebg)}
-.lane.dim{opacity:.5}
-.body{padding:14px;flex:1 1 auto;overflow-y:auto}
-.waiting{color:var(--sub);font-size:13px;text-align:center;padding:26px 12px}
-.who{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.av{width:34px;height:34px;border-radius:99px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
-.av.p{background:var(--teal)} .av.s{background:var(--purple)}
-.who .r{font-size:11px;color:var(--sub)} .who .n{font-size:13.5px;font-weight:700}
-h3.gt{margin:2px 0 3px;font-size:17px} .prompt{color:var(--sub);font-size:13px;margin:0 0 12px}
-.facts{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.fact{background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12.5px}
-.fact b{font-weight:700}
-.slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.slot{text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer}
-.slot:hover{border-color:var(--teal);background:var(--tealbg)}
-.slot.sel{border-color:var(--teal);background:var(--tealbg);box-shadow:0 0 0 2px var(--teal) inset}
-textarea{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-size:13px;font-family:inherit;resize:vertical}
-.chartnote{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:11.5px;line-height:1.55;background:#fcfdff;border-color:#cbd5e1}
-.chartnote:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purplebg)}
-.notehint{display:block;font-weight:500;font-size:10.5px;color:var(--sub);margin-top:2px;text-transform:none;letter-spacing:0}
-.aibox{border:1.5px solid var(--purplebg);background:#fcfaff;border-radius:11px;padding:11px 12px;margin-bottom:10px}
-.aihdr{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);margin-bottom:7px}
-.dxrow{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:3px 0;border-bottom:1px dashed #eef2f7}
+*{box-sizing:border-box}
+::selection{background:var(--mint);color:#000}
+body{margin:0;background:var(--bg);color:var(--body);
+ font-family:'Jost',system-ui,'Segoe UI',Arial,sans-serif;
+ font-size:var(--t-body);line-height:1.55;height:100vh;overflow:hidden;
+ -webkit-font-smoothing:antialiased}
+.app{max-width:1760px;height:100vh;margin:0 auto;display:flex;flex-direction:column}
+
+/* ---------------------------------------------------------------- app bar
+   Dark band, mirroring their hero. Full-bleed so it reads as chrome rather than
+   as another card floating on the cream. */
+.top{display:flex;align-items:center;justify-content:space-between;gap:18px;
+ background:var(--ink);color:#fff;padding:17px 26px;flex:0 0 auto;
+ /* one mint hairline under the dark band — the only ornament in the whole chrome */
+ border-bottom:1px solid rgba(47,218,152,.28)}
+.brand{display:flex;gap:15px;align-items:center;min-width:0}
+.logo{width:36px;height:36px;flex:0 0 auto;display:grid;place-items:center}
+.logo svg{display:block}
+.title{font-size:17px;font-weight:400;letter-spacing:.1px;color:#fff;line-height:1.2}
+.tag{font-size:var(--t-micro);color:#8A8F98;letter-spacing:.3px;line-height:1.35;
+ max-width:70ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:var(--t-micro);font-weight:600;text-transform:uppercase;
+ letter-spacing:var(--track);padding:6px 11px;background:rgba(47,218,152,.13);
+ color:var(--mint);border:1px solid rgba(47,218,152,.32);white-space:nowrap}
+
+/* ---------------------------------------------------------------- shell */
+.layout{display:grid;grid-template-columns:296px 1fr;gap:0;flex:1 1 auto;min-height:0}
+.layout>aside{min-height:0;border-right:1px solid var(--line);background:var(--panel)}
+.layout>aside>.panel{height:100%;overflow-y:auto;border:0}
+/* The working column SCROLLS. It used to be overflow:hidden on the theory that each pane
+   scrolls internally — which held until the result panel grew a 17-row claim exchange and
+   an AI coding block. At that point the panel is ~2400px in an ~830px column, the board
+   gets flex-squeezed to zero height, and roughly 1800px of the result — the entire payer
+   round trip — is clipped with no way to reach it. Scrolling the column fixes both. */
+main{display:flex;flex-direction:column;min-height:0;padding:22px 26px;overflow-y:auto}
+.panel{background:var(--panel);border:1px solid var(--line);padding:22px}
+
+/* Their signature: small, heavy, wide-tracked, uppercase. Used for every
+   section header in the app so the eye can skim structure. */
+.ph{font-size:var(--t-label);font-weight:600;text-transform:uppercase;
+ letter-spacing:var(--track);color:var(--ink);margin:0 0 14px;
+ padding-bottom:9px;border-bottom:2px solid var(--ink)}
+label{display:block;font-size:var(--t-sm);color:var(--sub);margin-bottom:6px;
+ font-weight:500;letter-spacing:.2px}
+select,input,textarea{width:100%;background:var(--panel);border:1px solid var(--line);
+ color:var(--ink);border-radius:0;padding:10px 11px;font-size:var(--t-body);
+ font-family:inherit;transition:border-color .15s}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--ink)}
+textarea{resize:vertical}
+.field{margin-bottom:13px}
+
+/* Buttons, set exactly like their CTAs: square, mint, black text. */
+button{font-family:inherit;cursor:pointer;border:0;border-radius:0;padding:11px 16px;
+ font-weight:500;font-size:var(--t-body);letter-spacing:.2px;transition:background .15s,border-color .15s}
+.primary{background:var(--mint);color:#000;width:100%;margin-top:6px;font-weight:600;
+ text-transform:uppercase;letter-spacing:var(--track);font-size:var(--t-label);padding:14px 16px}
+.primary:hover{background:var(--mint-dk)}
+.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);width:100%;
+ margin-top:8px;text-transform:uppercase;letter-spacing:var(--track);
+ font-size:var(--t-micro);font-weight:600;padding:11px 16px}
+.ghost:hover{border-color:var(--ink);color:var(--ink)}
+
+/* scenario picker */
+#scn{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line)}
+.scn{display:block;text-align:left;background:var(--panel);border:0;padding:10px 11px;cursor:pointer}
+.scn:hover{background:var(--bg)}
+.scn.active{background:var(--mintbg);box-shadow:inset 3px 0 0 var(--mint)}
+.scn .t{font-size:var(--t-sm);font-weight:600;color:var(--ink);display:block}
+.scn .d{font-size:var(--t-micro);color:var(--sub);display:block;line-height:1.4}
+
+/* insurance chips */
+.insrow{display:flex;flex-wrap:wrap;gap:5px}
+.insb{border:1px solid var(--line);background:var(--panel);padding:7px 11px;
+ font-size:var(--t-sm);cursor:pointer;color:var(--body);font-family:inherit}
+.insb:hover{border-color:var(--ink);color:var(--ink)}
+.insb.on{border-color:var(--mint);background:var(--mintbg);color:var(--mint-tx);font-weight:600}
+.insnote{font-size:var(--t-micro);color:var(--sub);margin-top:7px;line-height:1.45}
+
+/* ------------------------------------------------- pipeline progress rail
+   Was a row of floating chips. Now a connected track, so the eight domains read
+   as one sequence with a position in it rather than eight separate cards. */
+.steps{display:flex;gap:0;margin-bottom:20px;flex-wrap:wrap;
+ border:1px solid var(--line);background:var(--panel);counter-reset:step}
+.st{flex:1 1 0;min-width:104px;padding:13px 14px;position:relative;
+ border-right:1px solid var(--line-2);counter-increment:step}
+.st:last-child{border-right:0}
+/* a faint index in the corner of each stage — reads as considered, not decorative */
+.st::after{content:counter(step);position:absolute;top:10px;right:11px;
+ font-size:9.5px;font-weight:600;color:var(--line);letter-spacing:.4px}
+.st.active::after{color:#3A4048}
+.st .n{font-size:var(--t-sm);font-weight:600;color:var(--ink);line-height:1.25}
+.st .s{font-size:var(--t-micro);color:var(--faint);margin-top:3px;letter-spacing:.2px}
+.st .stg{font-size:var(--t-micro);font-weight:600;color:var(--sub);margin-top:2px;line-height:1.25}
+.phtag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:var(--track);
+ margin-bottom:5px;color:var(--faint)}
+.ph-pre{color:var(--faint)} .ph-visit{color:var(--mint-tx)} .ph-post{color:var(--brand-blue)}
+/* completed: a mint bar along the top edge, not a tinted card */
+.st.done{box-shadow:inset 0 3px 0 var(--mint)}
+.st.done .s{color:var(--mint-tx);font-weight:500}
+.st.active{background:var(--ink);box-shadow:inset 0 3px 0 var(--mint)}
+.st.active .n{color:#fff} .st.active .s{color:var(--mint);font-weight:600}
+.st.active .phtag,.st.active .stg{color:#8A8F98}
+
+/* ------------------------------------------------------------------ lanes */
+/* flex:0 0 auto, not 1 1 auto: the lanes must hold their height rather than being
+   squeezed to nothing by a tall result panel below them. Gate content scrolls inside
+   .body, which keeps the two lanes the same height however much either one holds. */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:0 0 auto;
+ min-height:min(54vh,470px)}
+.lane{border:1px solid var(--line);background:var(--panel);overflow:hidden;
+ display:flex;flex-direction:column;min-height:0;transition:box-shadow .18s,border-color .18s}
+.lane .lh{display:flex;align-items:center;gap:10px;padding:12px 15px;
+ border-bottom:1px solid var(--line);flex-wrap:wrap}
+.badge-p,.badge-s{font-weight:600;font-size:var(--t-micro);padding:5px 10px;
+ text-transform:uppercase;letter-spacing:var(--track)}
+.badge-p{background:var(--mintbg);color:var(--mint-tx)}
+.badge-s{background:var(--bluebg);color:var(--brand-blue)}
+.lh .sub{font-size:var(--t-micro);color:var(--faint);letter-spacing:.2px}
+/* active lane: a solid accent edge. Replaces the old glow, which needed a shadow. */
+.lane.patient.active{border-color:var(--mint);box-shadow:inset 4px 0 0 var(--mint)}
+.lane.staff.active{border-color:var(--brand-blue);box-shadow:inset 4px 0 0 var(--brand-blue)}
+.lane.dim{opacity:.45}
+.body{padding:20px;flex:1 1 auto;overflow-y:auto}
+/* Empty states get a designed treatment rather than grey text in the void: a hairline
+   rule above the message so the pane still reads as structured while idle. */
+.waiting{color:var(--faint);font-size:var(--t-body);text-align:center;padding:44px 16px;
+ letter-spacing:.2px;line-height:1.6}
+.waiting::before{content:"";display:block;width:26px;height:2px;background:var(--line);
+ margin:0 auto 18px}
+
+/* who is being asked */
+.who{display:flex;align-items:center;gap:11px;margin-bottom:14px;
+ padding-bottom:13px;border-bottom:1px solid var(--line-2)}
+.av{width:38px;height:38px;flex:0 0 auto;color:#fff;display:grid;place-items:center;
+ font-weight:600;font-size:var(--t-sm);letter-spacing:.3px}
+.av.p{background:var(--mint);color:#000} .av.s{background:var(--brand-blue)}
+.who .r{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:var(--track);font-weight:600}
+.who .n{font-size:var(--t-body);font-weight:600;color:var(--ink);line-height:1.3}
+/* Light weight at a large size — the analyticsai.co move. */
+h3.gt{margin:0 0 7px;font-size:23px;font-weight:300;color:var(--ink);
+ letter-spacing:-.4px;line-height:1.18}
+.prompt{color:var(--sub);font-size:var(--t-body);margin:0 0 18px;line-height:1.6;max-width:62ch}
+
+.facts{display:flex;flex-direction:column;gap:0;margin-bottom:14px;
+ border:1px solid var(--line-2)}
+.fact{background:var(--panel);padding:10px 12px;font-size:var(--t-body);
+ border-bottom:1px solid var(--line-2)}
+.fact:last-child{border-bottom:0}
+.fact b{font-weight:600;color:var(--ink)}
+
+/* choices: slots, bills */
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-bottom:12px;background:var(--line-2)}
+.slot{text-align:left;background:var(--panel);border:0;padding:12px 13px;cursor:pointer;
+ font-family:inherit;transition:background .13s}
+.slot:hover{background:var(--mintbg);box-shadow:inset 3px 0 0 var(--mint)}
+.slot.sel{background:var(--mintbg);box-shadow:inset 3px 0 0 var(--mint)}
+.slot .sd{font-size:var(--t-body);font-weight:600;display:block;color:var(--ink)}
+.slot .sp{font-size:var(--t-micro);color:var(--sub);display:block;margin-top:2px}
+.bill .sd{font-size:var(--t-md);font-weight:500;display:block;color:var(--ink)}
+.bill .sp{font-size:var(--t-micro);color:var(--sub)}
+.billbd{font-size:var(--t-micro);color:var(--sub);display:block;margin:5px 0;line-height:1.55}
+.taxrow{font-size:var(--t-micro);color:var(--sub);margin:0 0 9px;line-height:1.45}
+
+.acts{display:flex;gap:9px;margin-top:14px}
+.ok{background:var(--mint);color:#000;font-weight:600;text-transform:uppercase;
+ letter-spacing:var(--track);font-size:var(--t-label);padding:13px 20px}
+.ok:hover{background:var(--mint-dk)}
+.no{background:var(--panel);color:var(--red);border:1px solid var(--red);
+ text-transform:uppercase;letter-spacing:var(--track);font-size:var(--t-label);
+ font-weight:600;padding:13px 20px}
+.no:hover{background:var(--redbg)}
+
+/* chart note — the dentist's signed artifact, so it gets a document treatment */
+.chartnote{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;
+ font-size:12px;line-height:1.65;background:#FCFCFB;border-color:var(--line);
+ border-left:3px solid var(--ink);padding:13px}
+.chartnote:focus{outline:none;border-color:var(--line);border-left-color:var(--mint)}
+.notehint{display:block;font-weight:400;font-size:var(--t-micro);color:var(--faint);
+ margin-top:3px;text-transform:none;letter-spacing:0;line-height:1.45}
+
+/* ----------------------------------------------------- AI output panels */
+.aibox{border:1px solid var(--line);border-top:3px solid var(--mint);
+ background:var(--panel);padding:15px 16px;margin-bottom:14px}
+.aihdr{font-size:var(--t-label);font-weight:600;text-transform:uppercase;
+ letter-spacing:var(--track);color:var(--ink);margin-bottom:12px}
+.dxrow{display:flex;gap:10px;align-items:baseline;font-size:var(--t-body);
+ padding:7px 0;border-bottom:1px solid var(--line-2)}
 .dxrow:last-child{border-bottom:0}
-.ptr{font-weight:800;font-size:10.5px;background:var(--purplebg);color:var(--purple);border-radius:5px;padding:1px 6px;min-width:16px;text-align:center}
-.narr{font-size:11.5px;line-height:1.6;color:var(--ink);background:#f8fafc;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:8px 10px;margin:6px 0}
-.narr .nh{font-weight:800;font-size:11px;color:var(--teal);display:block;margin-bottom:3px}
-.attch{font-size:11px;color:var(--sub);margin-top:6px}
-.reqchip{font-size:9px;font-weight:800;border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.4px}
-.req-yes{background:#fee2e2;color:var(--red)} .req-no{background:#eef2f7;color:var(--sub)}
-/* rejection / denial gates: the offending element and the correct action, made loud */
-.noappeal{font-size:12px;background:var(--redbg);border-left:3px solid var(--red);padding:8px 10px;margin-bottom:9px;line-height:1.5}
-.noappeal.resub{background:var(--amberbg);border-left-color:var(--amber)}
-.rjrow{border:1px solid var(--line);border-left:3px solid var(--red);padding:8px 10px;margin-bottom:7px;font-size:12px}
-.rjel{font-size:11px;color:var(--sub);margin-top:3px}
-.rjel code{background:#f1f5f9;border:1px solid var(--line);padding:0 4px;font-size:10.5px}
-.rjfix{font-size:11.5px;color:var(--mint-tx);font-weight:600;margin-top:3px}
-/* --- claim exchange track: the clinic <-> payer conversation --- */
-.xch{border:1.5px solid var(--line);background:var(--panel);padding:0;margin-bottom:10px}
-.xchh{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.xchh .t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:var(--sub)}
-.xcols{display:grid;grid-template-columns:1fr 92px 1fr;font-size:11.5px}
-.xcolh{padding:6px 12px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--sub);border-bottom:1px solid var(--line-2)}
-.xcolh.p{text-align:right}
-.xr{display:grid;grid-template-columns:1fr 92px 1fr;border-bottom:1px dashed var(--line-2);align-items:center}
-.xr:last-child{border-bottom:0}
-.xc{padding:7px 12px;min-width:0}
-.xc.pay{text-align:right}
-.xl{font-weight:600;display:block;line-height:1.35}
-.xd{font-size:10.5px;color:var(--sub);display:block;line-height:1.4}
-.xmid{text-align:center;padding:4px 2px;font-size:9px;font-weight:800;letter-spacing:.3px;color:var(--sub)}
-.xtx{display:inline-block;border:1px solid var(--line);background:#f1f5f9;padding:1px 5px;font-size:9px;letter-spacing:.4px}
-.xarrow{font-size:13px;line-height:1;display:block;color:var(--brand-blue)}
-.xr.warn .xl{color:var(--amber)} .xr.stop .xl{color:var(--red)}
-.xr.int{background:#FAFAF8} .xr.int .xl{font-weight:500;color:var(--body)}
-.xr.ai{background:#F7FFFB}
-.simlane{font-size:9px;font-weight:800;color:var(--amber);background:var(--amberbg);padding:1px 7px;text-transform:uppercase;letter-spacing:.4px}
-.stagechip{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:2px 7px;background:#eef2f7;color:var(--sub)}
-.stage-paid{background:var(--mintbg);color:var(--mint-tx)} .stage-warn{background:var(--amberbg);color:var(--amber)}
+.ptr{font-weight:600;font-size:var(--t-micro);background:var(--ink);color:var(--mint);
+ padding:2px 7px;min-width:20px;text-align:center;flex:0 0 auto;letter-spacing:.4px}
+.narr{font-size:var(--t-sm);line-height:1.7;color:var(--body);background:#FCFCFB;
+ border:1px solid var(--line-2);border-left:3px solid var(--mint);padding:11px 13px;margin:8px 0}
+.narr .nh{font-weight:600;font-size:var(--t-micro);color:var(--ink);display:block;
+ margin-bottom:5px;text-transform:uppercase;letter-spacing:var(--track)}
+.attch{font-size:var(--t-micro);color:var(--sub);margin-top:9px;line-height:1.5}
+.phaselbl{font-size:9.5px;font-weight:700;text-transform:uppercase;
+ letter-spacing:var(--track);margin:16px 0 8px;color:var(--faint);
+ padding-bottom:6px;border-bottom:1px solid var(--line-2)}
+
+/* rejection / denial callouts */
+.noappeal{font-size:var(--t-sm);line-height:1.6;background:var(--amberbg);
+ border-left:3px solid var(--amber);padding:11px 13px;margin-bottom:12px;color:#5C3A00}
+.noappeal.resub{background:var(--bluebg);border-left-color:var(--brand-blue);color:#0B3C87}
+.rjrow{border-left:3px solid var(--red);background:#FDFAFA;padding:10px 12px;margin:7px 0;
+ font-size:var(--t-sm)}
+.rjel{font-family:ui-monospace,'Consolas',monospace;font-size:var(--t-micro);
+ color:var(--sub);margin-top:3px;display:block}
+.rjfix{font-size:var(--t-sm);color:var(--mint-tx);font-weight:500;margin-top:4px}
+
+/* chips */
+.reqchip,.simchip,.simlane,.stagechip{font-size:9.5px;font-weight:700;padding:2px 8px;
+ text-transform:uppercase;letter-spacing:var(--track);white-space:nowrap}
+.req-yes{background:var(--redbg);color:var(--red)}
+.req-no{background:var(--bg);color:var(--faint)}
+.simchip,.simlane{color:var(--amber);background:var(--amberbg);vertical-align:middle}
+.stagechip{background:var(--bg);color:var(--sub)}
+.stage-paid{background:var(--mintbg);color:var(--mint-tx)}
+.stage-warn{background:var(--amberbg);color:var(--amber)}
 .stage-stop{background:var(--redbg);color:var(--red)}
-.st .stg{font-size:9px;font-weight:700;color:var(--sub);margin-top:2px;line-height:1.2}
-.insrow{display:flex;flex-wrap:wrap;gap:6px}
-.insb{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--ink)}
-.insb:hover{border-color:var(--teal)}
-.insb.on{border-color:var(--teal);background:var(--tealbg);font-weight:800}
-.insnote{font-size:11px;color:var(--sub);margin-top:5px}
-.bill .sd{font-size:13px;font-weight:800;display:block} .bill .sp{font-size:11px;color:var(--sub)}
-.billbd{font-size:11px;color:var(--sub);display:block;margin:4px 0;line-height:1.5}
-.taxrow{font-size:11px;color:var(--sub);margin:-2px 0 8px}
-.slot .sd{font-size:13px;font-weight:800;display:block} .slot .sp{font-size:11px;color:var(--sub)}
-.acts{display:flex;gap:9px;margin-top:4px}
-.ok{background:var(--green);color:#fff} .no{background:#fff;color:var(--red);border:1.5px solid #fecaca}
-.result{margin-top:14px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.phaselbl{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px}
-.stat{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:11px}
-.stat .l{font-size:11px;color:var(--sub)} .stat .v{font-size:17px;font-weight:800;margin-top:2px}
-.b{display:inline-block;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:800;margin-bottom:10px}
-.b-green{background:var(--greenbg);color:var(--green)} .b-red{background:#fee2e2;color:var(--red)} .b-amber{background:var(--amberbg);color:var(--amber)}
-.log{margin-top:12px;flex:0 0 auto;min-height:0} .log summary{cursor:pointer;font-size:12px;color:var(--sub);font-weight:700;padding:4px 0}
+.std{font-size:var(--t-micro);color:var(--sub);background:var(--bg);
+ border:1px solid var(--line-2);padding:1px 6px;font-family:ui-monospace,'Consolas',monospace}
+
+/* ------------------------------------------------------- claim exchange */
+.xch{border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+.xchh{display:flex;align-items:center;gap:10px;padding:12px 15px;
+ border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.xchh .t{font-size:var(--t-label);font-weight:600;text-transform:uppercase;
+ letter-spacing:var(--track);color:var(--ink)}
+.xcols{display:grid;grid-template-columns:1fr 96px 1fr;background:var(--bg)}
+.xcolh{padding:8px 15px;font-size:9.5px;font-weight:700;text-transform:uppercase;
+ letter-spacing:var(--track);color:var(--sub)}
+.xcolh.p{text-align:right}
+.xr{display:grid;grid-template-columns:1fr 96px 1fr;border-bottom:1px solid var(--line-2);
+ align-items:center;font-size:var(--t-sm)}
+.xr:last-child{border-bottom:0}
+.xc{padding:9px 15px;min-width:0}
+.xc.pay{text-align:right}
+.xl{font-weight:500;display:block;line-height:1.4;color:var(--ink)}
+.xd{font-size:var(--t-micro);color:var(--sub);display:block;line-height:1.5}
+.xmid{text-align:center;padding:5px 3px}
+.xtx{display:inline-block;border:1px solid var(--line);background:var(--panel);
+ padding:2px 6px;font-size:9.5px;letter-spacing:.4px;font-weight:600;color:var(--ink);
+ font-family:ui-monospace,'Consolas',monospace}
+.xarrow{font-size:12px;line-height:1;display:block;color:var(--brand-blue);margin-bottom:2px}
+.xr.warn .xl{color:var(--amber)} .xr.stop .xl{color:var(--red)}
+/* payer-internal rows are a reconstruction, not disclosed data — tinted, lighter */
+.xr.int{background:#FAFAF8} .xr.int .xl{font-weight:400;color:var(--body)}
+.xr.int .xarrow{color:var(--faint)}
+.xr.ai{background:var(--mintbg)} .xr.ai .xl{color:var(--mint-tx);font-weight:500}
+
+/* ----------------------------------------------------------- result panel */
+.result{margin-top:16px}
+.b{display:inline-block;padding:5px 12px;font-size:var(--t-label);font-weight:600;
+ margin-bottom:14px;text-transform:uppercase;letter-spacing:var(--track)}
+.b-green{background:var(--mint);color:#000}
+.b-red{background:var(--red);color:#fff}
+.b-amber{background:var(--amber);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-2);
+ border:1px solid var(--line-2)}
+.stat{background:var(--panel);padding:17px 16px}
+.stat .l{font-size:9.5px;color:var(--faint);text-transform:uppercase;
+ letter-spacing:var(--track);font-weight:600;line-height:1.3}
+/* Large + LIGHT. The single most "them" thing in the whole layout: analyticsai.co sets
+   its 48px headings at weight 400, so the numbers here go light rather than bold. Most
+   dashboards do the reverse and end up looking like spreadsheets. */
+.stat .v{font-size:29px;font-weight:300;margin-top:7px;color:var(--ink);
+ line-height:1.1;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+
+/* --------------------------------------------------------- activity log */
+.log{margin-top:14px;flex:0 0 auto;min-height:0;padding-bottom:16px}
+.log summary{cursor:pointer;font-size:var(--t-label);color:var(--sub);font-weight:600;
+ padding:9px 0;text-transform:uppercase;letter-spacing:var(--track);
+ border-top:1px solid var(--line);list-style:none}
+.log summary::-webkit-details-marker{display:none}
+.log summary::before{content:"▸ ";color:var(--faint)}
+.log[open] summary::before{content:"▾ "}
 .log[open]{display:flex;flex-direction:column;min-height:0}
-#timeline{max-height:24vh;overflow-y:auto}
-.std{font-size:10.5px;color:var(--sub);background:#f1f5f9;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
-.simchip{font-size:9px;font-weight:800;color:var(--amber);background:var(--amberbg);border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle}
-.sysbadge{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;font-size:11px;color:var(--sub);max-width:62%;text-align:right}
-.sysbadge b{font-size:11.5px;color:var(--ink)} .sysbadge .vend{color:var(--sub)}
-.tl{display:flex;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px dashed #eef2f7}
-.tl .tm{color:var(--sub);min-width:64px;font-size:11px}
-.tl .who-p{color:var(--teal);font-weight:700} .tl .who-s{color:var(--purple);font-weight:700}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:99px;animation:sp .7s linear infinite;vertical-align:-2px}
+#timeline{max-height:22vh;overflow-y:auto}
+.tl{display:flex;gap:12px;font-size:var(--t-sm);padding:6px 0;
+ border-bottom:1px solid var(--line-2)}
+.tl .tm{color:var(--faint);min-width:66px;font-size:var(--t-micro);
+ font-family:ui-monospace,'Consolas',monospace}
+.tl .who-p{color:var(--mint-tx);font-weight:600}
+.tl .who-s{color:var(--brand-blue);font-weight:600}
+
+.sysbadge{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+ justify-content:flex-end;font-size:var(--t-micro);color:var(--sub);max-width:62%;text-align:right}
+.sysbadge b{font-size:var(--t-sm);color:var(--ink);font-weight:600}
+.sysbadge .vend{color:var(--faint)}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);
+ border-top-color:var(--mint);border-radius:99px;animation:sp .7s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* --- brand shape language: square corners, no drop shadows ---------------
-   analyticsai.co renders every button and card at border-radius 0 with no
-   box-shadow anywhere on the page; circles (50%) are reserved for avatars and
-   icon bubbles. Applied as an override block so the layout rules above stay
-   readable and the theme remains one editable region. */
-.panel,.st,.lane,.slot,.scn,.insb,.fact,.stat,.aibox,.narr,.chartnote,
-button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
-.std,.ptr,.logo{border-radius:0}
-.narr{border-radius:0}
-.av,.spin{border-radius:50%}
-.panel,.st,.lane{box-shadow:none}
-.logo{background:var(--mint);color:var(--ink)}
-.title{color:var(--ink);letter-spacing:-.2px}
-
-/* their CTA: mint fill, dark text, capitalised, generous horizontal padding */
-.primary,.ok{background:var(--mint);color:var(--ink);font-weight:600;letter-spacing:.2px}
-.primary:hover,.ok:hover{background:#25c489}
-.no{background:var(--panel);color:var(--red);border:1.5px solid var(--red)}
-.ghost{border:1.5px solid var(--line);color:var(--body)}
-
-/* their label style: small, uppercase, widely letter-spaced */
-.ph,.aihdr,.phaselbl{letter-spacing:1.6px}
-.phtag{letter-spacing:1.2px}
-
-/* completed / active step states as flat borders rather than glow rings */
-.st.done{border-color:var(--mint)} .st.done .s{color:var(--mint-tx)}
-.st.active{border-color:var(--amber);border-width:2px;box-shadow:none;background:var(--amberbg)}
-.lane.patient.active{border-color:var(--mint);border-width:2px;box-shadow:none}
-.lane.staff.active{border-color:var(--brand-blue);border-width:2px;box-shadow:none}
-.badge-p{background:var(--mint);color:var(--ink)}
-.slot.sel{border-color:var(--mint);background:var(--mintbg);box-shadow:none;border-width:2px}
-.chartnote:focus{box-shadow:none;border-color:var(--brand-blue);border-width:2px}
-.scn.active{border-color:var(--mint);background:var(--mintbg)}
-.insb.on{border-color:var(--mint);background:var(--mintbg)}
-/* the AI transcription panel is the demo's headline output — give it the brand accent */
-.aibox{border-color:var(--mint);border-left-width:3px;background:#F7FFFB}
-.aihdr{color:var(--mint-tx)}
-.ptr{background:var(--mint);color:var(--ink)}
-.narr{border-left-color:var(--mint)} .narr .nh{color:var(--mint-tx)}
-.av.p{background:var(--mint);color:var(--ink)}
+/* scrollbars, so the internal panes don't look like a different OS */
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:var(--bg)}
+*::-webkit-scrollbar-thumb{background:#D2CEC9}
+*::-webkit-scrollbar-thumb:hover{background:var(--faint)}
 
 /* ---------------------------------------------------------------- mobile / tablet
    The desktop layout is a fixed-height dashboard: body is 100vh with overflow:hidden
@@ -216,14 +353,20 @@ button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
    shows and hides, and 100vh doesn't track it. */
 @media(max-width:820px){
   html,body{height:auto;min-height:100%;overflow:visible}
-  .app{height:auto;min-height:100dvh;padding:10px}
+  .app{height:auto;min-height:100dvh}
+  .top{flex-wrap:wrap;gap:9px;padding:12px 14px}
+  .tag{white-space:normal;font-size:10.5px;max-width:none}
   .layout{grid-template-columns:1fr}
-  .layout>aside{min-height:0}
+  .layout>aside{min-height:0;border-right:0;border-bottom:1px solid var(--line)}
   .layout>aside>.panel{height:auto;overflow:visible}
-  main{min-height:0}
+  main{min-height:0;padding:14px}
   .board{grid-template-columns:1fr}
   .lane{min-height:0}
   .lane .body{overflow:visible;flex:0 0 auto}
+  .steps{flex-direction:column}
+  .st{border-right:0;border-bottom:1px solid var(--line-2)}
+  .st:last-child{border-bottom:0}
+  .st.done,.st.active{box-shadow:inset 3px 0 0 var(--mint)}
   .stats{grid-template-columns:1fr 1fr}
   #timeline{max-height:none}
   .sysbadge{max-width:none;text-align:left;justify-content:flex-start}
@@ -232,23 +375,24 @@ button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
   /* Touch targets: 44x44 is the WCAG / Apple minimum. The insurance chips were 30px
      tall, which is a coin-flip to tap accurately. */
   button,select,input{min-height:44px}
+  .insb{min-height:44px;padding:11px 13px}
+  .scn{min-height:52px}
+  .slot{min-height:58px}
+  #scn{grid-template-columns:1fr}
+  .slots{grid-template-columns:1fr}
 
   /* iOS Safari zooms the whole page when you focus a field whose font is under 16px,
      and the user then has to pinch back out. 16px is the floor that prevents it — worth
      the wider wrapping on the chart note. */
   input,select,textarea,.chartnote{font-size:16px}
 
-  /* The desktop layout leans on 8.5-9.5px labels. Those are fine on a monitor and
+  /* The desktop layout leans on 9.5-11px labels. Those are fine on a monitor and
      illegible on a handset held at arm's length, so nothing goes below ~10px here. */
-  .phtag{font-size:10px}
-  .simchip,.reqchip,.simlane,.xtx,.xmid,.st .stg,.ptr{font-size:10.5px}
-  .stagechip,.phaselbl,.aihdr,.xcolh,.notehint{font-size:11px}
-  .xd,.attch,.rjel,.rjfix,.billbd,.insnote,.taxrow{font-size:11.5px}
-  .insb{min-height:44px;padding:9px 13px}
-  .scn{min-height:52px}
-  .slot{min-height:56px}
-  #scn{grid-template-columns:1fr}
-  .slots{grid-template-columns:1fr}
+  .phtag,.phaselbl,.who .r,.stat .l,.xcolh,.reqchip,.simchip,.simlane,.stagechip,
+  .xtx,.narr .nh{font-size:10.5px}
+  .xd,.attch,.rjel,.rjfix,.billbd,.insnote,.taxrow,.st .stg,.st .s{font-size:11.5px}
+  .stat .v{font-size:22px}
+  h3.gt{font-size:18px}
 
   /* The claim exchange is a two-column clinic|payer ledger on desktop. At 375px each
      column would be ~140px, so it collapses to one column: transaction badge first,
@@ -256,16 +400,25 @@ button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
      without the columns to place them. */
   .xcols{display:none}
   .xr{display:flex;align-items:flex-start;gap:2px;padding:2px 0}
-  .xc{flex:1 1 auto;padding:6px 10px}
+  .xc{flex:1 1 auto;padding:8px 12px}
   .xc:empty{display:none}
   .xc.pay{text-align:left;border-left:2px solid var(--brand-blue)}
-  .xmid{order:-1;flex:0 0 72px;text-align:left;padding:6px 0 6px 10px}
-  .xarrow{display:inline}
+  .xmid{order:-1;flex:0 0 74px;text-align:left;padding:8px 0 8px 12px}
+  .xarrow{display:inline;margin:0 4px 0 0}
 }
 </style></head>
 <body><div class="app">
   <div class="top">
-    <div class="brand"><div class="logo">✚</div><div><div class="title">Healthcare Agentic AI</div>
+    <div class="brand"><div class="logo"><!-- Original mark, not the company's logo: four
+      ascending bars for the pipeline's phases, the tallest carrying a mint notch for the
+      human gate that interrupts it. Flat and square, matching the brand's geometry. -->
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-label="Healthcare Agentic AI" role="img">
+        <rect x="1" y="23" width="6" height="12" fill="#2FDA98" opacity=".45"/>
+        <rect x="9" y="17" width="6" height="18" fill="#2FDA98" opacity=".65"/>
+        <rect x="17" y="10" width="6" height="25" fill="#2FDA98" opacity=".82"/>
+        <rect x="25" y="1" width="6" height="34" fill="#2FDA98"/>
+        <rect x="25" y="12" width="6" height="4" fill="#080F18"/>
+      </svg></div><div><div class="title">Healthcare Agentic AI</div>
     <div class="tag">Live dental-practice encounter · pre-visit → visit day → post-visit, in the order a real US practice bills</div></div></div>
     <div><span class="pill" id="prov">LLM: sandbox</span></div>
   </div>
