@@ -433,28 +433,63 @@ class SandboxPayment:
 
 
 class SandboxSchedule:
-    """Per-provider availability. Deterministic open slots minus in-session bookings."""
+    """Per-provider availability. Deterministic open slots minus in-session bookings.
 
-    _HOURS = (9, 11, 13, 15, 17)         # local business hours, 9 AM - 6 PM
+    CLINIC HOURS ARE A HARD CONSTRAINT
+    ----------------------------------
+    A slot must START at or after opening AND END at or before closing. That second half
+    is the part that is easy to get wrong: with a 30-minute visit, 4:30pm is the last
+    valid start and 5:00pm is not a slot at all, because it would run to 5:30pm — half an
+    hour after the practice closes.
+
+    The window is enforced here, at generation, which is the only place it needs to be:
+    `slot_selection` lets the patient pick from these options by index and cannot
+    introduce a time of its own, so nothing downstream can book outside hours.
+    """
+
+    _OPEN_HOUR = 9                       # first appointment starts no earlier than 9:00am
+    _CLOSE_HOUR = 17                     # last appointment ENDS no later than 5:00pm
+    _LUNCH_START_HOUR, _LUNCH_END_HOUR = 12, 13     # practice closed over lunch
+    _SLOT_MIN = 30
+    # Offer at most this many per day, so the patient sees options spread across the week
+    # rather than three consecutive half-hours on the same morning.
+    _MAX_PER_DAY = 2
 
     def __init__(self) -> None:
         self._booked: set[tuple[str, str]] = set()
+
+    @classmethod
+    def slot_starts(cls) -> list[tuple[int, int]]:
+        """Every (hour, minute) start that fits entirely inside clinic hours."""
+        starts: list[tuple[int, int]] = []
+        minute = cls._OPEN_HOUR * 60
+        last_start = cls._CLOSE_HOUR * 60 - cls._SLOT_MIN    # the end-by-close rule
+        while minute <= last_start:
+            hour, mins = divmod(minute, 60)
+            if not (cls._LUNCH_START_HOUR <= hour < cls._LUNCH_END_HOUR):
+                starts.append((hour, mins))
+            minute += cls._SLOT_MIN
+        return starts
 
     def _open_slots(self, npi: str) -> list[dict]:
         base = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
         out = []
         for d in range(1, 9):
             day = base + timedelta(days=d)
-            if day.weekday() >= 5:                       # skip weekends
+            if day.weekday() >= 5:                       # closed weekends
                 continue
-            for h in self._HOURS:
-                start = day.replace(hour=h).isoformat()
+            offered_today = 0
+            for hour, mins in self.slot_starts():
+                if offered_today >= self._MAX_PER_DAY:
+                    break
+                start = day.replace(hour=hour, minute=mins).isoformat()
                 seed = int(_hash(npi + start), 16)
                 if seed % 3 == 0:                        # ~1/3 already booked by others
                     continue
                 if (npi, start) in self._booked:
                     continue
-                out.append({"start": start, "duration_min": 30})
+                out.append({"start": start, "duration_min": self._SLOT_MIN})
+                offered_today += 1
         return out
 
     async def availability(self, npi: str, limit: int = 5) -> list[dict]:

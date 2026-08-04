@@ -205,7 +205,63 @@ button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
 .narr{border-left-color:var(--mint)} .narr .nh{color:var(--mint-tx)}
 .av.p{background:var(--mint);color:var(--ink)}
 
-@media(max-width:820px){.layout{grid-template-columns:1fr}.board{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+/* ---------------------------------------------------------------- mobile / tablet
+   The desktop layout is a fixed-height dashboard: body is 100vh with overflow:hidden
+   and each pane scrolls internally. On a phone that traps everything below the first
+   screen — the page cannot scroll at all, so the lanes, the result panel and the claim
+   exchange are simply unreachable. On narrow screens the PAGE has to scroll instead,
+   and the internal scroll containers have to release their heights.
+
+   100dvh rather than 100vh: mobile browsers change viewport height as the address bar
+   shows and hides, and 100vh doesn't track it. */
+@media(max-width:820px){
+  html,body{height:auto;min-height:100%;overflow:visible}
+  .app{height:auto;min-height:100dvh;padding:10px}
+  .layout{grid-template-columns:1fr}
+  .layout>aside{min-height:0}
+  .layout>aside>.panel{height:auto;overflow:visible}
+  main{min-height:0}
+  .board{grid-template-columns:1fr}
+  .lane{min-height:0}
+  .lane .body{overflow:visible;flex:0 0 auto}
+  .stats{grid-template-columns:1fr 1fr}
+  #timeline{max-height:none}
+  .sysbadge{max-width:none;text-align:left;justify-content:flex-start}
+  .lane .lh{flex-wrap:wrap}
+
+  /* Touch targets: 44x44 is the WCAG / Apple minimum. The insurance chips were 30px
+     tall, which is a coin-flip to tap accurately. */
+  button,select,input{min-height:44px}
+
+  /* iOS Safari zooms the whole page when you focus a field whose font is under 16px,
+     and the user then has to pinch back out. 16px is the floor that prevents it — worth
+     the wider wrapping on the chart note. */
+  input,select,textarea,.chartnote{font-size:16px}
+
+  /* The desktop layout leans on 8.5-9.5px labels. Those are fine on a monitor and
+     illegible on a handset held at arm's length, so nothing goes below ~10px here. */
+  .phtag{font-size:10px}
+  .simchip,.reqchip,.simlane,.xtx,.xmid,.st .stg,.ptr{font-size:10.5px}
+  .stagechip,.phaselbl,.aihdr,.xcolh,.notehint{font-size:11px}
+  .xd,.attch,.rjel,.rjfix,.billbd,.insnote,.taxrow{font-size:11.5px}
+  .insb{min-height:44px;padding:9px 13px}
+  .scn{min-height:52px}
+  .slot{min-height:56px}
+  #scn{grid-template-columns:1fr}
+  .slots{grid-template-columns:1fr}
+
+  /* The claim exchange is a two-column clinic|payer ledger on desktop. At 375px each
+     column would be ~140px, so it collapses to one column: transaction badge first,
+     then whichever side spoke, with payer rows accented so the direction stays legible
+     without the columns to place them. */
+  .xcols{display:none}
+  .xr{display:flex;align-items:flex-start;gap:2px;padding:2px 0}
+  .xc{flex:1 1 auto;padding:6px 10px}
+  .xc:empty{display:none}
+  .xc.pay{text-align:left;border-left:2px solid var(--brand-blue)}
+  .xmid{order:-1;flex:0 0 72px;text-align:left;padding:6px 0 6px 10px}
+  .xarrow{display:inline}
+}
 </style></head>
 <body><div class="app">
   <div class="top">
@@ -493,7 +549,24 @@ function renderGate(g){
  const rj=document.getElementById("rej");if(rj)rj.onclick=()=>decide(g.gate_id,false);
  document.querySelectorAll(".slot").forEach(b=>b.onclick=()=>{if(busy)return;document.querySelectorAll(".slot").forEach(s=>s.classList.remove("sel"));b.classList.add("sel");decide(g.gate_id,true,b.dataset.id);});
  log(side,`needs <b>${(META[g.gate_id]||{}).role||"input"}</b> — ${g.title}`);
+ bringIntoView(side==="patient"?"wrapP":"wrapS");
 }
+// On desktop both lanes are on screen at once, so a gate opening is self-evident. On a
+// stacked mobile layout the lanes sit ~2000px below the start form: you tap Start, the
+// slot picker renders far off-screen, and it reads as "nothing happened / the workflow is
+// stuck". Pull whatever needs input to the top of the screen instead.
+// Guarded to the stacked breakpoint because on desktop the body cannot scroll at all
+// (fixed-height dashboard) and this would scroll an inner pane instead.
+function bringIntoView(id){
+ if(innerWidth>820)return;
+ const el=document.getElementById(id);
+ if(el)requestAnimationFrame(()=>el.scrollIntoView({behavior:"smooth",block:"start"}));
+}
+// Rotating a tablet from portrait to landscape can cross the 820px breakpoint. Above it
+// the page stops scrolling (fixed-height dashboard) but the browser KEEPS whatever scroll
+// offset the stacked layout had, leaving the header clipped off the top of the screen with
+// no way to scroll back. Reset it when we cross over.
+addEventListener("resize",()=>{if(innerWidth>820&&scrollY)scrollTo(0,0);});
 // What the AI produced from the note the dentist signed: per-tooth diagnoses, the
 // claim's diagnosis codes with their ADA item-29a line pointers, and the narrative
 // each procedure will be adjudicated on.
@@ -641,6 +714,7 @@ function renderResult(data){
      <div class="stat"><div class="l">Next recall</div><div class="v" style="font-size:13px">${s.recall_due_date||"—"}${s.recall_interval_months?` (${s.recall_interval_months}mo)`:""}</div></div>
    </div></div>`;
  log("system",`Encounter <b>${data.status}</b> · settle-up: <b>${oc[1]}</b> ${settle}`);
+ bringIntoView("result");
 }
 function llmLog(data){(data&&data.llm_calls||[]).forEach(c=>{
  const tag='<span style="color:var(--teal);font-weight:800">LLM</span>';
