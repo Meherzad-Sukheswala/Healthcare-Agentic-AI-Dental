@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timedelta, timezone
 
+from src.config import get_settings
 from src.shared.enums import Severity
 
 from src.shared.adjudication import adjudicate
@@ -471,8 +472,27 @@ class SandboxSchedule:
             minute += cls._SLOT_MIN
         return starts
 
+    @staticmethod
+    def _label(dt: datetime) -> str:
+        """'Wed, Aug 5, 9:30 AM' — built without %-d/%-I, which aren't portable to Windows."""
+        hour12 = dt.strftime("%I").lstrip("0") or "12"
+        return f"{dt:%a}, {dt:%b} {dt.day}, {hour12}:{dt:%M %p}"
+
     def _open_slots(self, npi: str) -> list[dict]:
-        base = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+        """Open slots in the CLINIC's timezone.
+
+        The timezone is the whole point of this method's shape. Previously this used
+        `datetime.now().astimezone()`, i.e. the SERVER's zone — fine on a laptop in the
+        same timezone as the clinic, wrong the instant it deploys. Render runs containers
+        in UTC, so a 9:30am slot went out as 09:30+00:00 and every patient east or west of
+        Greenwich saw a different time; in US Eastern it rendered as 5:30am.
+
+        Each slot therefore carries a pre-formatted `display` string in clinic time. The
+        browser must not re-derive it from `start`, because `new Date(...)` converts to the
+        VIEWER's zone — which is exactly the bug.
+        """
+        tz = get_settings().clinic_tz()
+        base = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
         out = []
         for d in range(1, 9):
             day = base + timedelta(days=d)
@@ -482,13 +502,24 @@ class SandboxSchedule:
             for hour, mins in self.slot_starts():
                 if offered_today >= self._MAX_PER_DAY:
                     break
-                start = day.replace(hour=hour, minute=mins).isoformat()
+                # Re-resolve the zone after replace() so the offset is right for THIS
+                # date — a slot either side of a DST boundary has a different offset.
+                start_dt = day.replace(hour=hour, minute=mins, fold=0)
+                start = start_dt.isoformat()
                 seed = int(_hash(npi + start), 16)
                 if seed % 3 == 0:                        # ~1/3 already booked by others
                     continue
                 if (npi, start) in self._booked:
                     continue
-                out.append({"start": start, "duration_min": self._SLOT_MIN})
+                end_dt = start_dt + timedelta(minutes=self._SLOT_MIN)
+                out.append({
+                    "start": start,
+                    "duration_min": self._SLOT_MIN,
+                    # what the patient reads — clinic-local, already formatted
+                    "display": self._label(start_dt),
+                    "window": f"{self._label(start_dt)} – {self._label(end_dt).split(', ')[-1]}",
+                    "timezone": str(tz),
+                })
                 offered_today += 1
         return out
 

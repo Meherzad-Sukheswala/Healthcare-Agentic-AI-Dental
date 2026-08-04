@@ -5,6 +5,13 @@ pydantic-settings==2.*
 python-dotenv==1.*
 structlog==24.*
 httpx==0.27.*
+# IANA timezone database for zoneinfo. Required because appointment slots are generated
+# in the CLINIC's timezone, not the server's — a container running in UTC (as Render's
+# does) would otherwise offer a 9:30am slot that a patient in Eastern time sees as
+# 5:30am. Linux images usually carry the system tzdb; Windows does not, so this is
+# pinned rather than assumed. A fixed UTC offset is not an option: it would be an hour
+# wrong for half the year across DST.
+tzdata==2024.*
 
 # API
 fastapi==0.*

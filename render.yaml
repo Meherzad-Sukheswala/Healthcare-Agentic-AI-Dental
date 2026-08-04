@@ -19,6 +19,11 @@ services:
         value: production
       - key: LOG_JSON
         value: "true"
+      # The CLINIC's timezone. Render's containers run in UTC, so without this the
+      # scheduler generated slots at UTC wall-clock and a patient in US Eastern saw the
+      # 9:30am slot as 5:30am. Set this to the practice's real timezone.
+      - key: CLINIC_TIMEZONE
+        value: America/Los_Angeles
       # To switch a specific deploy to live Gemini/Groq responses later, add
       # GEMINI_API_KEY / GROQ_API_KEY as SECRET env vars in the Render dashboard
       # (Environment tab) and change LLM_PROVIDER above to "gemini" or "groq".

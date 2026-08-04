@@ -463,7 +463,11 @@ function gateCard(g,side){
  const isDocReq=g.gate_id==="insurance.document_request";
  let inner;
  if(isSlot){const o=(g.data&&g.data.options)||[];
-   inner=`<div class="slots">`+o.map(x=>`<button class="slot" data-id="${x.id}"><span class="sd">${fmtSlot(x.start)}</span><span class="sp">${x.provider_name}</span></button>`).join("")
+   // Render the server's clinic-local `display` string verbatim. Do NOT fall back to
+   // new Date(x.start) unless it's missing: that converts to the VIEWER's timezone, which
+   // is what made a 9:30am clinic slot show up as 5:30am once the server ran in UTC.
+   const tzNote=o.length&&o[0].timezone?`<div class="taxrow">All times shown in clinic local time (${o[0].timezone.replace("_"," ")}).</div>`:"";
+   inner=tzNote+`<div class="slots">`+o.map(x=>`<button class="slot" data-id="${x.id}"><span class="sd">${x.window||x.display||fmtSlot(x.start)}</span><span class="sp">${x.provider_name}</span></button>`).join("")
    +`</div><div class="acts"><button class="no" id="rej">None work</button></div>`;
  }else if(isTxPlan){const d=g.data||{},items=d.items||[];
    inner=`<div class="facts">${txPlanRows(items)}</div>

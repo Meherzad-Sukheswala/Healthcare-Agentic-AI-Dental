@@ -27,6 +27,13 @@ class AvailabilityFinder(Agent):
                     "id": str(i), "npi": c.get("npi", ""), "provider_name": name,
                     "facility": c.get("facility", ""),
                     "start": slot["start"], "duration_min": slot["duration_min"],
+                    # Clinic-local, pre-formatted. The UI must render THIS rather than
+                    # parsing `start`, because a browser converts an ISO timestamp to the
+                    # viewer's timezone — which turned a 9:30am slot into 5:30am for a
+                    # patient in Eastern time once the server was running in UTC.
+                    "display": slot.get("display", ""),
+                    "window": slot.get("window", ""),
+                    "timezone": slot.get("timezone", ""),
                 })
                 i += 1
         if not options:
