@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Healthcare Agentic AI — Live Encounter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   Theme: palette, type and shape language taken from analyticsai.co.
+   Extracted from their live Elementor globals rather than eyeballed:
+     primary #0163E2 · accent #080F18 · text #46464D · mint #2FDA98
+     surface #F3F0EC · border #DEDEDE · muted #A4A4A8 · Jost, radius 0, no shadows
+
+   Mint is their signature — every CTA on the site is mint with dark text — so it
+   carries "brand + positive" here: primary buttons, completed steps, patient lane.
+   Blue carries the clinic/staff side. Two deliberate departures, both legibility:
+     * mint at #2FDA98 is ~1.8:1 on white, unreadable as small text, so mint-family
+       TEXT uses --mint-tx; the brand mint stays for fills, borders and buttons.
+     * their muted grey #A4A4A8 is ~2.5:1, so small print uses a darkened --sub and
+       #A4A4A8 is kept for decorative rules only.
+   Amber and red are functional, not brand: clinical state (in progress / critical /
+   denied) has to stay unambiguous, and their palette carries no equivalent.
+   Old variable names are kept as aliases so no markup or script changed.
+--------------------------------------------------------------------------- */
+:root{
+ /* brand */
+ --mint:#2FDA98; --mint-tx:#07694A; --mintbg:#E4FBF1;
+ --brand-blue:#0163E2; --bluebg:#E7EFFC;
+ --bg:#F3F0EC; --panel:#FFFFFF; --ink:#080F18; --body:#46464D;
+ --sub:#676770; --faint:#A4A4A8; --line:#DEDEDE; --line-2:#ECE9E5;
+ /* functional status */
+ --amber:#B26A00; --amberbg:#FBF0DC; --red:#C6301C; --redbg:#FBE7E4;
+ /* aliases onto the old names, so every existing rule keeps working */
+ --blue:var(--brand-blue); --teal:var(--mint-tx); --tealbg:var(--mintbg);
+ --purple:var(--brand-blue); --purplebg:var(--bluebg);
+ --green:var(--mint-tx); --greenbg:var(--mintbg);
+ --shadow:none;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--body);
+ font-family:'Jost',system-ui,'Segoe UI',Arial,sans-serif;line-height:1.5;height:100vh;overflow:hidden}
+.app{max-width:1680px;height:100vh;margin:0 auto;padding:14px;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex:0 0 auto}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;display:grid;place-items:center;font-size:20px;font-weight:800}
+.title{font-size:18px;font-weight:800} .tag{font-size:12px;color:var(--sub)}
+.pill{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#eef2f7;color:var(--sub);border:1px solid var(--line)}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:14px;flex:1 1 auto;min-height:0}
+.layout>aside{min-height:0}
+.layout>aside>.panel{height:100%;overflow-y:auto}
+main{display:flex;flex-direction:column;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.ph{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--sub);margin-bottom:10px}
+label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px;font-weight:600}
+select,input{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-size:13px}
+.field{margin-bottom:9px}
+button{font-family:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px}
+.primary{background:var(--blue);color:#fff;width:100%;margin-top:4px}
+.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);width:100%;margin-top:8px}
+#scn{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.scn{display:block;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer}
+.scn.active{border-color:var(--blue);background:#eff6ff} .scn .t{font-size:12px;font-weight:700} .scn .d{font-size:10px;color:var(--sub)}
+.steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.st{flex:1;min-width:112px;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:9px 11px;box-shadow:var(--shadow);position:relative}
+.st .n{font-size:12.5px;font-weight:800} .st .s{font-size:10.5px;color:var(--sub);margin-top:2px}
+.phtag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ph-pre{color:var(--blue)} .ph-visit{color:var(--teal)} .ph-post{color:var(--purple)}
+.st.done{border-color:#bbf7d0} .st.done .s{color:var(--green)}
+.st.active{border-color:var(--amber);box-shadow:0 0 0 3px var(--amberbg)} .st.active .s{color:var(--amber);font-weight:700}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1 1 auto;min-height:0}
+.lane{border:1.5px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;transition:.2s;display:flex;flex-direction:column;min-height:0}
+.lane .lh{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.badge-p{background:var(--tealbg);color:var(--teal);font-weight:800;font-size:12px;padding:4px 10px;border-radius:99px}
+.badge-s{background:var(--purplebg);color:var(--purple);font-weight:800;font-size:12px;padding:4px 10px;border-radius:99px}
+.lh .sub{font-size:11.5px;color:var(--sub)}
+.lane.patient.active{border-color:var(--teal);box-shadow:0 0 0 3px var(--tealbg)}
+.lane.staff.active{border-color:var(--purple);box-shadow:0 0 0 3px var(--purplebg)}
+.lane.dim{opacity:.5}
+.body{padding:14px;flex:1 1 auto;overflow-y:auto}
+.waiting{color:var(--sub);font-size:13px;text-align:center;padding:26px 12px}
+.who{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.av{width:34px;height:34px;border-radius:99px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+.av.p{background:var(--teal)} .av.s{background:var(--purple)}
+.who .r{font-size:11px;color:var(--sub)} .who .n{font-size:13.5px;font-weight:700}
+h3.gt{margin:2px 0 3px;font-size:17px} .prompt{color:var(--sub);font-size:13px;margin:0 0 12px}
+.facts{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.fact{background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12.5px}
+.fact b{font-weight:700}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.slot{text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer}
+.slot:hover{border-color:var(--teal);background:var(--tealbg)}
+.slot.sel{border-color:var(--teal);background:var(--tealbg);box-shadow:0 0 0 2px var(--teal) inset}
+textarea{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-size:13px;font-family:inherit;resize:vertical}
+.chartnote{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:11.5px;line-height:1.55;background:#fcfdff;border-color:#cbd5e1}
+.chartnote:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purplebg)}
+.notehint{display:block;font-weight:500;font-size:10.5px;color:var(--sub);margin-top:2px;text-transform:none;letter-spacing:0}
+.aibox{border:1.5px solid var(--purplebg);background:#fcfaff;border-radius:11px;padding:11px 12px;margin-bottom:10px}
+.aihdr{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);margin-bottom:7px}
+.dxrow{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:3px 0;border-bottom:1px dashed #eef2f7}
+.dxrow:last-child{border-bottom:0}
+.ptr{font-weight:800;font-size:10.5px;background:var(--purplebg);color:var(--purple);border-radius:5px;padding:1px 6px;min-width:16px;text-align:center}
+.narr{font-size:11.5px;line-height:1.6;color:var(--ink);background:#f8fafc;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:8px 10px;margin:6px 0}
+.narr .nh{font-weight:800;font-size:11px;color:var(--teal);display:block;margin-bottom:3px}
+.attch{font-size:11px;color:var(--sub);margin-top:6px}
+.reqchip{font-size:9px;font-weight:800;border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.4px}
+.req-yes{background:#fee2e2;color:var(--red)} .req-no{background:#eef2f7;color:var(--sub)}
+/* rejection / denial gates: the offending element and the correct action, made loud */
+.noappeal{font-size:12px;background:var(--redbg);border-left:3px solid var(--red);padding:8px 10px;margin-bottom:9px;line-height:1.5}
+.noappeal.resub{background:var(--amberbg);border-left-color:var(--amber)}
+.rjrow{border:1px solid var(--line);border-left:3px solid var(--red);padding:8px 10px;margin-bottom:7px;font-size:12px}
+.rjel{font-size:11px;color:var(--sub);margin-top:3px}
+.rjel code{background:#f1f5f9;border:1px solid var(--line);padding:0 4px;font-size:10.5px}
+.rjfix{font-size:11.5px;color:var(--mint-tx);font-weight:600;margin-top:3px}
+/* --- claim exchange track: the clinic <-> payer conversation --- */
+.xch{border:1.5px solid var(--line);background:var(--panel);padding:0;margin-bottom:10px}
+.xchh{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.xchh .t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:var(--sub)}
+.xcols{display:grid;grid-template-columns:1fr 92px 1fr;font-size:11.5px}
+.xcolh{padding:6px 12px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--sub);border-bottom:1px solid var(--line-2)}
+.xcolh.p{text-align:right}
+.xr{display:grid;grid-template-columns:1fr 92px 1fr;border-bottom:1px dashed var(--line-2);align-items:center}
+.xr:last-child{border-bottom:0}
+.xc{padding:7px 12px;min-width:0}
+.xc.pay{text-align:right}
+.xl{font-weight:600;display:block;line-height:1.35}
+.xd{font-size:10.5px;color:var(--sub);display:block;line-height:1.4}
+.xmid{text-align:center;padding:4px 2px;font-size:9px;font-weight:800;letter-spacing:.3px;color:var(--sub)}
+.xtx{display:inline-block;border:1px solid var(--line);background:#f1f5f9;padding:1px 5px;font-size:9px;letter-spacing:.4px}
+.xarrow{font-size:13px;line-height:1;display:block;color:var(--brand-blue)}
+.xr.warn .xl{color:var(--amber)} .xr.stop .xl{color:var(--red)}
+.xr.int{background:#FAFAF8} .xr.int .xl{font-weight:500;color:var(--body)}
+.xr.ai{background:#F7FFFB}
+.simlane{font-size:9px;font-weight:800;color:var(--amber);background:var(--amberbg);padding:1px 7px;text-transform:uppercase;letter-spacing:.4px}
+.stagechip{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:2px 7px;background:#eef2f7;color:var(--sub)}
+.stage-paid{background:var(--mintbg);color:var(--mint-tx)} .stage-warn{background:var(--amberbg);color:var(--amber)}
+.stage-stop{background:var(--redbg);color:var(--red)}
+.st .stg{font-size:9px;font-weight:700;color:var(--sub);margin-top:2px;line-height:1.2}
+.insrow{display:flex;flex-wrap:wrap;gap:6px}
+.insb{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--ink)}
+.insb:hover{border-color:var(--teal)}
+.insb.on{border-color:var(--teal);background:var(--tealbg);font-weight:800}
+.insnote{font-size:11px;color:var(--sub);margin-top:5px}
+.bill .sd{font-size:13px;font-weight:800;display:block} .bill .sp{font-size:11px;color:var(--sub)}
+.billbd{font-size:11px;color:var(--sub);display:block;margin:4px 0;line-height:1.5}
+.taxrow{font-size:11px;color:var(--sub);margin:-2px 0 8px}
+.slot .sd{font-size:13px;font-weight:800;display:block} .slot .sp{font-size:11px;color:var(--sub)}
+.acts{display:flex;gap:9px;margin-top:4px}
+.ok{background:var(--green);color:#fff} .no{background:#fff;color:var(--red);border:1.5px solid #fecaca}
+.result{margin-top:14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.phaselbl{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px}
+.stat{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:11px}
+.stat .l{font-size:11px;color:var(--sub)} .stat .v{font-size:17px;font-weight:800;margin-top:2px}
+.b{display:inline-block;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:800;margin-bottom:10px}
+.b-green{background:var(--greenbg);color:var(--green)} .b-red{background:#fee2e2;color:var(--red)} .b-amber{background:var(--amberbg);color:var(--amber)}
+.log{margin-top:12px;flex:0 0 auto;min-height:0} .log summary{cursor:pointer;font-size:12px;color:var(--sub);font-weight:700;padding:4px 0}
+.log[open]{display:flex;flex-direction:column;min-height:0}
+#timeline{max-height:24vh;overflow-y:auto}
+.std{font-size:10.5px;color:var(--sub);background:#f1f5f9;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.simchip{font-size:9px;font-weight:800;color:var(--amber);background:var(--amberbg);border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle}
+.sysbadge{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;font-size:11px;color:var(--sub);max-width:62%;text-align:right}
+.sysbadge b{font-size:11.5px;color:var(--ink)} .sysbadge .vend{color:var(--sub)}
+.tl{display:flex;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px dashed #eef2f7}
+.tl .tm{color:var(--sub);min-width:64px;font-size:11px}
+.tl .who-p{color:var(--teal);font-weight:700} .tl .who-s{color:var(--purple);font-weight:700}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:99px;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* --- brand shape language: square corners, no drop shadows ---------------
+   analyticsai.co renders every button and card at border-radius 0 with no
+   box-shadow anywhere on the page; circles (50%) are reserved for avatars and
+   icon bubbles. Applied as an override block so the layout rules above stay
+   readable and the theme remains one editable region. */
+.panel,.st,.lane,.slot,.scn,.insb,.fact,.stat,.aibox,.narr,.chartnote,
+button,select,input,textarea,.pill,.badge-p,.badge-s,.b,.reqchip,.simchip,
+.std,.ptr,.logo{border-radius:0}
+.narr{border-radius:0}
+.av,.spin{border-radius:50%}
+.panel,.st,.lane{box-shadow:none}
+.logo{background:var(--mint);color:var(--ink)}
+.title{color:var(--ink);letter-spacing:-.2px}
+
+/* their CTA: mint fill, dark text, capitalised, generous horizontal padding */
+.primary,.ok{background:var(--mint);color:var(--ink);font-weight:600;letter-spacing:.2px}
+.primary:hover,.ok:hover{background:#25c489}
+.no{background:var(--panel);color:var(--red);border:1.5px solid var(--red)}
+.ghost{border:1.5px solid var(--line);color:var(--body)}
+
+/* their label style: small, uppercase, widely letter-spaced */
+.ph,.aihdr,.phaselbl{letter-spacing:1.6px}
+.phtag{letter-spacing:1.2px}
+
+/* completed / active step states as flat borders rather than glow rings */
+.st.done{border-color:var(--mint)} .st.done .s{color:var(--mint-tx)}
+.st.active{border-color:var(--amber);border-width:2px;box-shadow:none;background:var(--amberbg)}
+.lane.patient.active{border-color:var(--mint);border-width:2px;box-shadow:none}
+.lane.staff.active{border-color:var(--brand-blue);border-width:2px;box-shadow:none}
+.badge-p{background:var(--mint);color:var(--ink)}
+.slot.sel{border-color:var(--mint);background:var(--mintbg);box-shadow:none;border-width:2px}
+.chartnote:focus{box-shadow:none;border-color:var(--brand-blue);border-width:2px}
+.scn.active{border-color:var(--mint);background:var(--mintbg)}
+.insb.on{border-color:var(--mint);background:var(--mintbg)}
+/* the AI transcription panel is the demo's headline output — give it the brand accent */
+.aibox{border-color:var(--mint);border-left-width:3px;background:#F7FFFB}
+.aihdr{color:var(--mint-tx)}
+.ptr{background:var(--mint);color:var(--ink)}
+.narr{border-left-color:var(--mint)} .narr .nh{color:var(--mint-tx)}
+.av.p{background:var(--mint);color:var(--ink)}
+
+@media(max-width:820px){.layout{grid-template-columns:1fr}.board{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+</style></head>
+<body><div class="app">
+  <div class="top">
+    <div class="brand"><div class="logo">✚</div><div><div class="title">Healthcare Agentic AI</div>
+    <div class="tag">Live dental-practice encounter · pre-visit → visit day → post-visit, in the order a real US practice bills</div></div></div>
+    <div><span class="pill" id="prov">LLM: sandbox</span></div>
+  </div>
+  <div class="layout">
+    <aside>
+      <div class="panel">
+        <div class="ph">Start an encounter</div>
+        <div class="field"><label>Patient</label><select id="patient">
+          <option value="PAT-001">Maria Garcia · on warfarin, penicillin allergy</option>
+          <option value="PAT-002">James Wilson · hyperlipidemia, latex allergy</option>
+          <option value="PAT-003">Sarah Chen · hypertension (propranolol)</option></select></div>
+        <div class="field"><label>Insurance</label><div id="ins" class="insrow"></div><div id="insnote" class="insnote"></div></div>
+        <div class="field"><label>What brings you in today?</label><textarea id="rt" rows="2" placeholder="Describe the patient's concern…">tooth pain and swelling for the past week</textarea></div>
+        <div class="field"><label>Chief complaint</label><input id="cc" value="tooth pain and swelling"/></div>
+        <div class="field"><label>Scenario</label><div id="scn"></div></div>
+        <button class="primary" id="start">▶ Start encounter</button>
+        <button class="ghost" id="reset">Reset</button>
+      </div>
+    </aside>
+    <main>
+      <div class="steps" id="steps"></div>
+      <div class="board">
+        <section class="lane patient" id="wrapP"><div class="lh"><span class="badge-p">👤 Patient</span><span class="sub">what the patient inputs</span><span class="sysbadge" id="sysP"></span></div>
+          <div class="body" id="laneP"><div class="waiting">Start an encounter to begin.</div></div></section>
+        <section class="lane staff" id="wrapS"><div class="lh"><span class="badge-s">🏥 Clinic &amp; staff</span><span class="sub">what the agency inputs</span><span class="sysbadge" id="sysS"></span></div>
+          <div class="body" id="laneS"><div class="waiting">Start an encounter to begin.</div></div></section>
+      </div>
+      <div id="result"></div>
+      <details class="log"><summary>Activity log</summary><div id="timeline"></div></details>
+    </main>
+  </div>
+</div>
+<script>
+const API = location.origin.startsWith("http") ? location.origin : "http://localhost:8000";
+// Order matches how a real US dental practice works: the patient pays an ESTIMATE at
+// checkout, the claim goes out afterwards, and the payer's answer only arrives 1-2
+// weeks later — at which point the estimate is reconciled into a balance or a refund.
+// See docs/us-dental-clinic-real-world-workflow.md
+const DOMS=[
+ ["scheduling","Scheduling","pre-visit"],
+ ["patient","Check-in","visit day"],
+ ["clinical","Clinical","visit day"],
+ ["checkout","Checkout","visit day"],
+ ["insurance","Insurance","post-visit"],
+ ["reconciliation","Reconcile","post-visit"],
+ ["pharmacy","Pharmacy","post-visit"],
+ ["fraud","Fraud","post-visit"]];
+const PHASE_CLS={"pre-visit":"ph-pre","visit day":"ph-visit","post-visit":"ph-post"};
+const PATIENT_GATES=new Set(["scheduling.slot_selection","patient.consent","clinical.treatment_consent","billing.payment_auth"]);
+const META={
+ "scheduling.slot_selection":{role:"Patient",init:"PT",ic:"🗓️"},
+ "scheduling.referral":{role:"Primary Care Physician",init:"PCP",ic:"📝"},
+ "patient.mpi":{role:"MPI Data Steward",init:"MPI",ic:"🧩"},
+ "patient.consent":{role:"Patient",init:"PT",ic:"🖊️"},
+ "clinical.critical_value":{role:"Attending Nurse",init:"RN",ic:"🚨"},
+ "clinical.diagnosis":{role:"Dentist",init:"DDS",ic:"🩺"},
+ "clinical.treatment_plan":{role:"Dentist",init:"DDS",ic:"🦷"},
+ "clinical.treatment_consent":{role:"Patient",init:"PT",ic:"🧾"},
+ "clinical.epcs":{role:"Prescriber · DEA EPCS",init:"DDS",ic:"🔐"},
+ "insurance.predetermination":{role:"Payer Clinical Reviewer",init:"PA",ic:"📋"},
+ "insurance.claim_rejection":{role:"Billing Specialist",init:"BL",ic:"🔁"},
+ "insurance.document_request":{role:"Dentist / Clinic Staff",init:"DDS",ic:"📎"},
+ "billing.coding_qa":{role:"Coding / CDI Specialist",init:"CDI",ic:"🔎"},
+ "billing.payment_auth":{role:"Patient",init:"PT",ic:"💳"},
+ "billing.denial":{role:"Billing Specialist",init:"BL",ic:"↩️"},
+ "pharmacy.verification":{role:"Pharmacist",init:"Rx",ic:"✅"},
+ "fraud.siu":{role:"SIU Investigator",init:"SIU",ic:"🕵️"},
+};
+// Which real-world (simulated) system each gate's step represents — shown in the lane header.
+const GATE_SYS={
+ "scheduling.slot_selection":["Scheduling","provider calendars","Dentrix · NexHealth"],
+ "scheduling.referral":["Provider directory","NPPES","CAQH · LexisNexis"],
+ "patient.mpi":["EHR · master patient index","FHIR R4","Dentrix · Open Dental"],
+ "patient.consent":["EHR · consent","FHIR R4","Dentrix · Open Dental"],
+ "clinical.critical_value":["EHR · lab results","FHIR R4","Dentrix · Open Dental"],
+ "clinical.diagnosis":["Clinical decision support","ICD-10 · CDT","First Databank · Micromedex"],
+ "clinical.treatment_plan":["Treatment planning","CDT","Dentrix · Open Dental"],
+ "clinical.treatment_consent":["Financial / informed consent","ADA claim form estimate","Dentrix · Open Dental"],
+ "clinical.epcs":["DEA EPCS","2FA e-sign","DrFirst · Surescripts"],
+ "insurance.predetermination":["Predetermination","X12 278","DentalXChange · Vyne Dental"],
+ "insurance.claim_rejection":["Clearinghouse front-end edits","X12 277CA","DentalXChange · Vyne Dental"],
+ "insurance.document_request":["Claim attachments","X12 275 · PWK","NEA FastAttach · Vyne Trellis"],
+ "billing.coding_qa":["Claims coding / CDI — pre-submission","X12 837D","DentalXChange · Vyne Dental"],
+ "billing.payment_auth":["Checkout — estimate collected","card rails","InstaMed · Rectangle Health"],
+ "billing.denial":["Reconciliation — ERA denial appeal","X12 835 · CARC","DentalXChange · Vyne Dental"],
+ "pharmacy.verification":["Pharmacy + PDMP","NCPDP · Surescripts","Surescripts · Bamboo Health"],
+ "fraud.siu":["Fraud analytics","internal","—"],
+};
+function sysChip(gid){const s=GATE_SYS[gid];if(!s)return"";
+ return `<b>${s[0]}</b> <span class="std">${s[1]}</span> <span class="vend">${s[2]}</span>`+(s[2]==="—"?"":` <span class="simchip">simulated</span>`);}
+function setSys(side,gid){const p=document.getElementById("sysP"),q=document.getElementById("sysS");if(!p||!q)return;
+ const c=sysChip(gid);if(side==="patient"){p.innerHTML=c;q.innerHTML="";}else{q.innerHTML=c;p.innerHTML="";}}
+function clearSys(){const p=document.getElementById("sysP"),q=document.getElementById("sysS");if(p)p.innerHTML="";if(q)q.innerHTML="";}
+const RX_APAP={rx_id:"RX1",rxcui:"161",display:"acetaminophen",ndc:"0069-2587-10",schedule:"non_controlled"};
+const SCN={
+ "Routine visit":{d:"standard checkup & cleaning",b:r=>({...r,prescribe:[RX_APAP]})},
+ "Controlled Rx":{d:"post-extraction pain → triggers DEA EPCS signing",b:r=>({...r,prescribe:[{rx_id:"RX1",rxcui:"7804",display:"oxycodone",ndc:"0069-2587-10",schedule:"CII"}]})},
+ "High-cost":{d:"implant + bone graft → triggers predetermination + coding QA",b:r=>({...r,chief_complaint:"evaluation for dental implant and bone graft",prescribe:[]})},
+ "Critical lab":{d:"pre-op labs before IV sedation → nurse alert",b:r=>({...r,labs:{potassium:6.5},prescribe:[]})},
+ "Fraud check":{d:"dx/meds mismatch → SIU alert",b:r=>({...r,chief_complaint:"jaw pain and clicking",prescribe:[{rx_id:"RX1",rxcui:"723",display:"amoxicillin",ndc:"0069-2587-10",schedule:"non_controlled"}]})},
+ "Identity conflict":{d:"ambiguous identity → MPI steward",b:r=>({...r,identity_ambiguous:true,prescribe:[RX_APAP]})},
+ "Referral":{d:"ortho/oral-surgery referral needs approval",b:r=>({...r,requires_referral:true,prescribe:[RX_APAP]})},
+ // --- the two ways a claim fails, which are NOT the same thing ---
+ "Claim rejected":{d:"member ID missing → 277CA bounce, no adjudication, not appealable",
+   b:r=>({...r,claim_defect:"member_id",prescribe:[]})},
+ "Payer wants records":{d:"payer pends → AI finds both films on file and answers, no staff",
+   b:r=>({...r,prescribe:[]})},
+ "Film never taken":{d:"payer pends → post-op PA missing → dentist asked, patient recalled",
+   b:r=>({...r,imaging_omitted:["postop_radiograph"],prescribe:[]})},
+ "Records sent upfront":{d:"proactive attachment → no pend at all, straight to paid",
+   b:r=>({...r,attachments_ride_along:true,prescribe:[]})},
+ "Crown downgraded":{d:"LEAT: porcelain paid at metal rate → patient owes difference",
+   b:r=>({...r,payer_id:"PAYER-002",member_id:"DD-70002",prescribe:[]})},
+ "Frequency cap":{d:"2 cleanings already used → patient's bill, not an appeal",
+   b:r=>({...r,chief_complaint:"routine cleaning",prior_procedures:["D1110","D1110"],prescribe:[]})},
+ "Filed too late":{d:"400 days after service → timely filing, write it off",
+   b:r=>({...r,days_since_service:400,prescribe:[]})},
+};
+let preset="Routine visit",eid=null,busy=false;
+const scn=document.getElementById("scn");
+Object.entries(SCN).forEach(([k,v])=>{const b=document.createElement("button");b.className="scn"+(k===preset?" active":"");
+ b.innerHTML=`<span><span class="t">${k}</span><br><span class="d">${v.d}</span></span>`;
+ b.onclick=()=>{preset=k;[...scn.children].forEach(c=>c.classList.remove("active"));b.classList.add("active");};scn.appendChild(b);});
+
+// ---- Insurance selector ----
+const PATIENT_INS={"PAT-001":"PAYER-001","PAT-002":"PAYER-002","PAT-003":"PAYER-003"};
+const MEMBER={"PAYER-001":"BCB-90001","PAYER-002":"DD-70002","PAYER-003":"CIG-50003","PAYER-MCR":"MCR-0001","PAYER-MCD":"MCD-0001"};
+const INS=[{k:"PAYER-001",label:"BlueCross Dental"},{k:"PAYER-002",label:"Delta Dental"},{k:"PAYER-003",label:"Cigna Dental"},
+ {k:"PAYER-MCR",label:"Medicare"},{k:"PAYER-MCD",label:"Medicaid"},{k:"SELF",label:"Self-pay"},{k:"NONE",label:"Uninsured"}];
+let selIns=PATIENT_INS[document.getElementById("patient").value]||"PAYER-002";
+const insBox=document.getElementById("ins");
+function labelFor(k){const o=INS.find(x=>x.k===k);return o?o.label:k;}
+function insFor(pid){
+ if(selIns==="NONE")return{payer_id:"",member_id:"",self_pay:false};
+ if(selIns==="SELF"){const dp=PATIENT_INS[pid]||"PAYER-002";return{payer_id:dp,member_id:MEMBER[dp]||"MBR-0000",self_pay:true};}
+ return{payer_id:selIns,member_id:MEMBER[selIns]||"MBR-0000",self_pay:false};}
+function insNote(){const pid=document.getElementById("patient").value;let t;
+ if(selIns==="NONE")t="No coverage on file — single cash bill.";
+ else if(selIns==="SELF")t="Paying cash; "+labelFor(PATIENT_INS[pid]||"PAYER-002")+" on file → two bills to choose from.";
+ else t=labelFor(selIns)+" — billed to insurance.";
+ document.getElementById("insnote").textContent=t;}
+function renderIns(){insBox.innerHTML="";INS.forEach(o=>{const b=document.createElement("button");
+ b.className="insb"+(o.k===selIns?" on":"");b.textContent=o.label;
+ b.onclick=()=>{selIns=o.k;renderIns();};insBox.appendChild(b);});insNote();}
+renderIns();
+document.getElementById("patient").onchange=()=>{selIns=PATIENT_INS[document.getElementById("patient").value]||"PAYER-002";renderIns();};
+
+function req(){const pid=document.getElementById("patient").value;const ins=insFor(pid);
+ let r={patient_id:pid,request_text:document.getElementById("rt").value,chief_complaint:document.getElementById("cc").value,
+  payer_id:ins.payer_id,member_id:ins.member_id,self_pay:ins.self_pay,prescribe:[],payment_token:"tok_visa",state:"CA",
+  retail_items:[{description:"Electric toothbrush",amount_cents:4999,taxable:true},{description:"Gauze & post-op care kit (medical supply)",amount_cents:800,taxable:false}]};
+ return SCN[preset].b(r);}
+async function call(p,o){let x;try{x=await fetch(API+p,o);}catch(e){throw new Error("Can't reach the server — is it running?");}
+ let d=null;try{d=await x.json();}catch(e){throw new Error("Server returned a non-JSON response ("+x.status+")");}
+ if(!x.ok)throw new Error((d&&(d.detail||d.error))||("Request failed ("+x.status+")"));return d;}
+function money(c){return c==null?"—":"$"+(c/100).toFixed(2);}
+function now(){return new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});}
+function fmtSlot(iso){try{return new Date(iso).toLocaleString([],{weekday:"short",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return iso;}}
+function pretty(k){return k.replace(/_/g," ").replace(/\b\w/g,m=>m.toUpperCase());}
+function vf(v){if(Array.isArray(v))return v.length?(typeof v[0]==="object"?v.length+" item(s)":v.join(", ")):"—";if(v&&typeof v==="object")return Object.keys(v).length?JSON.stringify(v):"—";return v===""||v==null?"—":String(v);}
+function log(side,html){const box=document.getElementById("timeline");const d=document.createElement("div");d.className="tl";
+ const w=side==="patient"?'<span class="who-p">Patient</span>':side==="staff"?'<span class="who-s">Staff</span>':'<span>System</span>';
+ d.innerHTML=`<span class="tm">${now()}</span><span>${w} · ${html}</span>`;box.prepend(d);}
+
+const STAGE_LABEL={submitted:"submitted",rejected:"rejected · resubmit",
+ awaiting_documents:"awaiting records",paid_after_documents:"paid after records",
+ paid:"paid",denied:"denied"};
+function renderSteps(data){
+ const dm=(data&&data.domains)||{},aw=data?data.awaiting_domain:"";
+ const stage=((data&&data.summary)||{}).claim_stage||"";
+ let lastPhase="";
+ document.getElementById("steps").innerHTML=DOMS.map(([k,n,phase])=>{
+   let st=dm[k]||"";if(aw===k)st="active";
+   const done=st==="completed"||st==="partial";
+   const s=aw===k?"● in progress":(done?"✓ done":"pending");
+   const cls=aw===k?"active":(done?"done":"");
+   const tag=phase!==lastPhase?`<div class="phtag ${PHASE_CLS[phase]}">${phase}</div>`:"";
+   lastPhase=phase;
+   // Insurance reads as a STAGE, not a box that says "complete" — the claim cycle is the
+   // part a dentist most wants to see inside.
+   const sub=(k==="insurance"&&STAGE_LABEL[stage])?`<div class="stg">${STAGE_LABEL[stage]}</div>`:"";
+   return `<div class="st ${cls}">${tag}<div class="n">${n}</div><div class="s">${s}</div>${sub}</div>`;
+ }).join("");
+}
+function waiting(msg){return `<div class="waiting">${msg}</div>`;}
+function billBreakdown(b){const d=b.detail||{};
+ if(b.label==="insured")return `Service ${money(d.service_cents)} · copay ${money(d.copay_cents)} · deductible ${money(d.deductible_applied_cents)} of ${money(d.deductible_remaining_before_cents)} (→ ${money(d.deductible_remaining_after_cents)} left) · coinsurance ${money(d.coinsurance_cents)}`+(d.coinsurance_pct?` (${Math.round(d.coinsurance_pct*100)}%)`:"")+`<br>+ items ${money(d.items_cents)} · tax ${money(d.tax_cents)} · insurer pays ${money(d.insurer_pays_cents)}`;
+ return `Service ${money(d.service_cents)}`+(d.self_pay_discount_cents?` (−${money(d.self_pay_discount_cents)} cash discount)`:"")+` · items ${money(d.items_cents)} · tax ${money(d.tax_cents)}`;}
+function txPlanRows(items){return items.map(i=>`<div class="fact"><b>${i.tooth?`Tooth ${i.tooth} — `:""}${i.cdt}:</b> ${i.description} — ${money(i.fee_cents)} <span style="color:var(--sub)">(${pretty(i.phase)})</span></div>`).join("");}
+function gateCard(g,side){
+ const m=META[g.gate_id]||{role:"Reviewer",init:"?",ic:"⚑"};
+ const isSlot=g.gate_id==="scheduling.slot_selection",isEpcs=g.gate_id==="clinical.epcs",isPay=g.gate_id==="billing.payment_auth",isDx=g.gate_id==="clinical.diagnosis";
+ const isTxPlan=g.gate_id==="clinical.treatment_plan",isTxConsent=g.gate_id==="clinical.treatment_consent";
+ const isReject=g.gate_id==="insurance.claim_rejection",isDenial=g.gate_id==="billing.denial";
+ const isDocReq=g.gate_id==="insurance.document_request";
+ let inner;
+ if(isSlot){const o=(g.data&&g.data.options)||[];
+   inner=`<div class="slots">`+o.map(x=>`<button class="slot" data-id="${x.id}"><span class="sd">${fmtSlot(x.start)}</span><span class="sp">${x.provider_name}</span></button>`).join("")
+   +`</div><div class="acts"><button class="no" id="rej">None work</button></div>`;
+ }else if(isTxPlan){const d=g.data||{},items=d.items||[];
+   inner=`<div class="facts">${txPlanRows(items)}</div>
+   <div class="fact"><b>Total:</b> ${money(d.total_cents)}</div>
+   <div class="acts"><button class="ok" id="apr">✓ Approve plan</button><button class="no" id="rej">✗ Reject</button></div>`;
+ }else if(isTxConsent){const d=g.data||{},est=d.estimates||[];
+   const rows=est.map(e=>`<div class="fact"><b>${e.item_id} (${e.cdt}, ${e.category}):</b> insurer ${money(e.estimated_insurer_cents)} · patient ${money(e.estimated_patient_cents)}</div>`).join("");
+   inner=`<div class="facts">${rows}</div>
+   <div class="fact"><b>Estimated total:</b> insurer ${money(d.estimated_insurer_cents)} · patient ${money(d.estimated_patient_cents)}</div>
+   <div class="field"><label>Decline item IDs (comma-separated, optional)</label><input id="dxnote" placeholder="e.g. TX2 — blank = accept the whole plan"/></div>
+   <div class="acts"><button class="ok" id="apr">✓ Approve</button><button class="no" id="rej">✗ Reject all</button></div>`;
+ }else if(isPay){const d=g.data||{},bills=d.bills||[],items=d.line_items||[];
+   const itemHtml=items.length?`<div class="facts">`+items.map(it=>`<div class="fact"><b>${it.description}:</b> ${money(it.amount_cents)} `+(it.taxable?`<span style="color:var(--sub)">+ tax ${money(it.tax_cents)}</span>`:`<span style="color:var(--sub)">· tax-exempt</span>`)+`</div>`).join("")+`</div>`:"";
+   const note=d.dual_bill?`<div class="taxrow">Coverage on file but paying cash — choose which bill to approve:</div>`:"";
+   const billHtml=bills.map(b=>`<button class="slot bill" data-id="${b.label}"><span class="sd">${b.name} — ${money(b.amount_cents)}</span><span class="billbd">${billBreakdown(b)}</span><span class="sp">`+(b.label==="insured"?"insurance pays "+money(b.payer_cents):"pay cash")+` · approve</span></button>`).join("");
+   inner=itemHtml+note+`<div class="slots">${billHtml}</div><div class="acts"><button class="no" id="rej">✗ Reject</button></div>`;
+ }else if(isDx){
+   // The dentist's chart note, pre-filled from dictation / ambient-scribe output. This
+   // is the artifact they sign; the AI transcribes it into claim codes + narrative.
+   const d=g.data||{},sugg=(d.suggested||[])[0]||{};
+   inner=`<div class="fact" style="margin-bottom:10px"><b>AI suggested:</b> ${sugg.icd10||d.primary_icd10||"—"}${sugg.display?" — "+sugg.display:""}${sugg.confidence!=null?` <span style="color:var(--sub)">(confidence ${Math.round(sugg.confidence*100)}%)</span>`:""}</div>
+   <div class="field"><label>Chart note — dictated, edit freely before signing<span class="notehint">S / O / A / P · universal tooth numbers · the AI reads whatever you write, including the ICD-10 inline</span></label>
+     <textarea id="dxnote" class="chartnote" rows="15" spellcheck="false">${(d.draft_note||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea></div>
+   <div class="acts"><button class="ok" id="apr">✓ Sign note</button><button class="no" id="rej">✗ Reject</button></div>`;
+ }else if(isReject){
+   // 277CA rejection: no payer decision exists, so there is nothing to appeal. The
+   // offending data ELEMENT is the whole point — a biller can't fix what they can't find.
+   const d=g.data||{},rows=(d.rejections||[]).map(r=>`<div class="rjrow">
+     <div><span class="ptr">${r.category_code}</span> <span class="std">${r.status_code}</span> <b>${r.description}</b></div>
+     <div class="rjel">at <code>${r.element}</code></div>
+     <div class="rjfix">→ ${r.fix_hint}</div></div>`).join("");
+   inner=`<div class="noappeal">⛔ Never adjudicated — <b>no CARC codes, nothing to appeal.</b>
+     Fix the field and resubmit as a replacement claim (frequency code ${d.resubmission_frequency_code||"7"}).</div>
+   ${rows}
+   <div class="attch">277CA received ${d.payer_receipt_date||"—"} · original claim ${d.control_number||"—"} · this date is what proves timely filing</div>
+   <div class="field"><label>What did you correct?</label><input id="dxnote" value="Re-keyed subscriber ID from the patient's card"/></div>
+   <div class="acts"><button class="ok" id="apr">✓ Correct &amp; resubmit</button><button class="no" id="rej">✗ Hold for info</button></div>`;
+ }else if(isDocReq){
+   // Only the items the AI could NOT answer from the record reach this gate. Showing what
+   // it already handled is the point: the practice sees what it was spared.
+   const d=g.data||{},need=d.needed||[],had=d.already_attached||[];
+   const hadRows=had.map(a=>`<div class="dxrow"><span class="ptr">AI</span><span><b>${a.label}</b> <span style="color:var(--sub)">${a.detail||""}</span></span></div>`).join("");
+   const needRows=need.map(n=>`<div class="rjrow" style="border-left-color:var(--amber)">
+     <div><span class="ptr" style="background:var(--amberbg);color:var(--amber)">${n.produced_by}</span> <b>${n.label}</b>${n.supports_cdt?` <span class="std">${n.supports_cdt}</span>`:""}</div>
+     <div class="rjel">payer wants it to: ${n.why_payer_wants_it}</div>
+     <div class="rjfix" style="color:${n.needs_patient_visit?"var(--red)":"var(--amber)"}">→ ${n.why_escalated}</div></div>`).join("");
+   inner=`<div class="noappeal resub">📎 Claim is <b>PENDED</b>, not denied — the payer is asking, not refusing.
+     <div class="rjfix" style="margin-top:5px">${d.already_attached_count} document(s) were already on file and have been attached automatically. ${need.length} still need a person.</div></div>
+   ${hadRows?`<div class="phaselbl ph-visit" style="margin-top:0">Handled by the AI — nobody asked</div>${hadRows}`:""}
+   <div class="phaselbl ph-post">Needs a person</div>${needRows}
+   <div class="attch">Respond by ${d.due_date||"—"} · ${d.days_to_respond} days · ignoring it converts the pend into a denial</div>
+   <div class="field"><label>What was produced?</label><input id="dxnote" value="Post-op PA taken at the recall visit"/></div>
+   <div class="acts"><button class="ok" id="apr">✓ Documents supplied</button><button class="no" id="rej">✗ Not worth it — write off</button></div>`;
+ }else if(isDenial){
+   const d=g.data||{},resub=d.recommended_action==="resubmit_with_attachment";
+   const carc=(d.carc_codes||[]).filter(Boolean).map(c=>`<span class="std">CARC ${c}</span>`).join(" ");
+   const adj=(d.adjustments||[]).map(a=>`<div class="fact"><b>CARC ${a.code}:</b> ${a.description} — ${money(a.amount_cents)}</div>`).join("");
+   inner=`<div class="${resub?"noappeal resub":"noappeal"}">${resub?"📎":"⚖️"} Payer reason: <b>${pretty(d.denial_reason||"unspecified")}</b> ${carc}
+     <div class="rjfix" style="margin-top:5px">${d.why||""}</div></div>
+   ${adj?`<div class="facts">${adj}</div>`:""}
+   ${resub&&(d.attachments_available||[]).length?`<div class="attch"><b>Attach:</b> ${(d.attachments_available||[]).join(" · ")}</div>`:""}
+   <div class="attch">Billed ${money(d.billed_cents)} · appeal window ${d.appeal_deadline_days} days ${d.appealable?"":"· not appealable"}</div>
+   <div class="field"><label>Action taken</label><input id="dxnote" value="${resub?"Resubmitted with radiographs attached":"Appeal filed with narrative"}"/></div>
+   <div class="acts"><button class="ok" id="apr">✓ ${resub?"Resubmit with attachment":"File appeal"}</button><button class="no" id="rej">✗ Write off</button></div>`;
+ }else{
+   const facts=Object.entries(g.data||{}).filter(([,v])=>vf(v)!=="—").map(([k,v])=>`<div class="fact"><b>${pretty(k)}:</b> ${vf(v)}</div>`).join("");
+   inner=`<div class="facts">${facts||'<div class="fact">Ready for review.</div>'}</div>
+   ${isEpcs?'<div class="field"><label>Second factor (OTP)</label><input id="otp" value="654321"/></div>':''}
+   <div class="acts"><button class="ok" id="apr">✓ Approve</button><button class="no" id="rej">✗ Reject</button></div>`;
+ }
+ return `<div class="who"><div class="av ${side==="patient"?"p":"s"}">${m.init}</div><div><div class="r">Input needed from</div><div class="n">${m.role}</div></div></div>
+   <h3 class="gt">${m.ic} ${g.title}</h3><div class="prompt">${g.prompt}</div>${inner}`;
+}
+function renderGate(g){
+ const side=PATIENT_GATES.has(g.gate_id)?"patient":"staff";
+ const P=document.getElementById("laneP"),S=document.getElementById("laneS"),wP=document.getElementById("wrapP"),wS=document.getElementById("wrapS");
+ wP.classList.toggle("active",side==="patient");wP.classList.toggle("dim",side!=="patient");
+ wS.classList.toggle("active",side==="staff");wS.classList.toggle("dim",side!=="staff");
+ if(side==="patient"){P.innerHTML=gateCard(g,"patient");S.innerHTML=waiting("Waiting on the patient…");}
+ else{S.innerHTML=gateCard(g,"staff");P.innerHTML=waiting("Nothing to do right now — the clinic is handling this step.");}
+ setSys(side,g.gate_id);
+ const ap=document.getElementById("apr");if(ap)ap.onclick=()=>decide(g.gate_id,true);
+ const rj=document.getElementById("rej");if(rj)rj.onclick=()=>decide(g.gate_id,false);
+ document.querySelectorAll(".slot").forEach(b=>b.onclick=()=>{if(busy)return;document.querySelectorAll(".slot").forEach(s=>s.classList.remove("sel"));b.classList.add("sel");decide(g.gate_id,true,b.dataset.id);});
+ log(side,`needs <b>${(META[g.gate_id]||{}).role||"input"}</b> — ${g.title}`);
+}
+// What the AI produced from the note the dentist signed: per-tooth diagnoses, the
+// claim's diagnosis codes with their ADA item-29a line pointers, and the narrative
+// each procedure will be adjudicated on.
+function codingBlock(s){
+ const c=s.coding||{};const dx=c.diagnoses||[],lines=c.line_diagnoses||[],narr=c.narratives||[];
+ if(!dx.length&&!narr.length)return"";
+ const codes=(c.diagnosis_codes||[]).map((code,i)=>`<span class="ptr">${"ABCD"[i]}</span> ${code}`).join(" &nbsp; ");
+ const dxRows=dx.map(d=>`<div class="dxrow"><span class="ptr">${d.tooth?"#"+d.tooth:"—"}</span><span><b>${d.icd10}</b> ${d.display||""}</span></div>`).join("");
+ const lineRows=lines.map(l=>`<div class="dxrow"><span class="ptr">${l.diagnosis_pointer||"—"}</span><span><b>${l.cdt}</b>${l.tooth?" · tooth #"+l.tooth:""} → ${l.icd10||"—"}</span></div>`).join("");
+ const narrRows=narr.map(n=>`<div class="narr"><span class="nh">${n.cdt}${n.tooth?" · tooth #"+n.tooth:""}</span>${n.text}</div>`).join("");
+ const req=c.submission_required
+   ?`<span class="reqchip req-yes">required by payer</span>`
+   :`<span class="reqchip req-no">not required by payer</span>`;
+ const att=(c.attachments_recommended||[]).length
+   ?`<div class="attch"><b>Attachments the payer will want:</b> ${(c.attachments_recommended||[]).join(" · ")}</div>`:"";
+ return `<div class="aibox">
+   <div class="aihdr">🤖 AI transcribed from the note ${s.note_signed_by?"signed by "+s.note_signed_by:""}</div>
+   <div class="phaselbl ph-visit" style="margin-top:0">Diagnoses read out of the note (per tooth)</div>${dxRows}
+   <div class="phaselbl ph-post">Claim diagnosis codes — ADA item 34a ${req}</div>
+   <div style="font-size:12.5px;padding:3px 0">${codes||"—"}</div>
+   <div style="font-size:11px;color:var(--sub);margin-top:2px">${c.submission_reason||""}</div>
+   ${lineRows?`<div class="phaselbl ph-post">Per-procedure diagnosis pointers — ADA item 29a</div>${lineRows}`:""}
+   ${narrRows?`<div class="phaselbl ph-post">Claim narratives — what the payer's dental consultant reads</div>${narrRows}`:""}
+   ${att}
+ </div>`;
+}
+// How the claim fared — and which KIND of failure it was, because a rejection and a
+// denial look alike on a worklist and need opposite work.
+function claimOutcomeBlock(s){
+ if(s.claim_rejected){
+   const rows=(s.rejections||[]).map(r=>`<div class="rjrow">
+     <div><span class="ptr">${r.category_code}</span> <span class="std">${r.status_code}</span> <b>${r.description}</b></div>
+     <div class="rjel">at <code>${r.element}</code></div>
+     <div class="rjfix">→ ${r.fix_hint}</div></div>`).join("");
+   const h=s.rejection_handling||{};
+   return `<div class="aibox" style="border-color:var(--red);background:#FFF7F6">
+     <div class="aihdr" style="color:var(--red)">⛔ Claim REJECTED before adjudication — 277CA</div>
+     <div class="noappeal">The payer never saw this claim, so there are <b>no CARC codes and no appeal</b>.
+       It is a data fix, not a dispute — and the balance stays unresolved in AR until a corrected claim goes out.</div>
+     ${rows}
+     ${h.action?`<div class="attch"><b>${h.handled_by||"Biller"}:</b> ${pretty(h.action)} — resubmitted as ${h.resubmitted_as} (frequency code ${h.frequency_code}) against original claim ${h.original_control_number}${h.correction_note?` · "${h.correction_note}"`:""}</div>`:""}
+   </div>`;
+ }
+ if(!s.denied&&!s.downgraded)return"";
+ const ap=s.appeal||{},resub=s.denial_action==="resubmit_with_attachment";
+ const carc=(s.carc_codes||[]).filter(Boolean).map(c=>`<span class="std">CARC ${c}</span>`).join(" ");
+ const ACT={appeal:"Appeal it",resubmit_with_attachment:"Resubmit with the attachment — do NOT appeal",
+   bill_patient:"Bill the patient — an appeal cannot succeed",write_off:"Write it off — not appealable",
+   rebill_other_payer:"Rebill the primary payer first",none:"No action"};
+ const tone=s.downgraded?"resub":(resub?"resub":"");
+ return `<div class="aibox" style="border-color:${s.downgraded?"var(--amber)":"var(--red)"};background:${s.downgraded?"#FFFCF4":"#FFF7F6"}">
+   <div class="aihdr" style="color:${s.downgraded?"var(--amber)":"var(--red)"}">
+     ${s.downgraded?"⚖️ Claim PAID at a reduced benefit — 835 ERA":"⚖️ Claim DENIED on adjudication — 835 ERA"}</div>
+   <div class="noappeal ${tone}"><b>${pretty(s.denial_reason||"unspecified")}</b> ${carc}
+     <div class="rjfix" style="margin-top:5px">${s.denial_explanation||""}</div>
+     <div style="margin-top:5px"><b>Correct action:</b> ${ACT[s.denial_action]||"—"}</div></div>
+   ${ap.handled_by?`<div class="attch"><b>${ap.handled_by}:</b> ${ap.resubmitted_with_attachment?"resubmitted with attachment":"appeal filed"} — "${ap.action}" · window ${ap.appeal_deadline_days} days</div>`:""}
+ </div>`;
+}
+// The clinic <-> payer conversation. Left column is the practice, right is the payer.
+// Rows the practice genuinely sends or receives carry their X12 transaction number; rows
+// shaded as internal are a RECONSTRUCTION of payer-side adjudication — a practice never
+// sees inside it, so those are labelled rather than presented as disclosed fact.
+function exchangeBlock(s){
+ const ex=s.exchange||[]; if(!ex.length)return"";
+ const ARROW={out:"▶",in:"◀",internal:"·"};
+ const rows=ex.map(r=>{
+   const ai=r.actor==="clinic"&&r.direction==="internal";
+   const cls=[r.status!=="ok"?r.status:"", r.direction==="internal"?"int":"", ai?"ai":""].filter(Boolean).join(" ");
+   const cell=`<span class="xl">${ai?"🤖 ":""}${r.label}</span>${r.detail?`<span class="xd">${r.detail}</span>`:""}`;
+   const mid=`<div class="xmid"><span class="xarrow">${ARROW[r.direction]||"·"}</span>${r.transaction?`<span class="xtx">${r.transaction}</span>`:""}</div>`;
+   return r.actor==="clinic"
+     ? `<div class="xr ${cls}"><div class="xc">${cell}</div>${mid}<div class="xc"></div></div>`
+     : `<div class="xr ${cls}"><div class="xc"></div>${mid}<div class="xc pay">${cell}</div></div>`;
+ }).join("");
+ const STAGE={paid:["stage-paid","paid"],paid_after_documents:["stage-paid","paid after records"],
+   denied:["stage-stop","denied"],rejected:["stage-stop","rejected"],
+   awaiting_documents:["stage-warn","awaiting records"],submitted:["stage-warn","submitted"]};
+ const st=STAGE[s.claim_stage]||["","—"];
+ return `<div class="xch">
+   <div class="xchh"><span class="t">Claim exchange</span>
+     <span class="stagechip ${st[0]}">${st[1]}</span>
+     <span class="sysbadge" style="max-width:none;margin-left:auto"><span class="simlane">simulated payer-side adjudication</span></span></div>
+   <div class="xcols"><div class="xcolh">🏥 Your practice</div><div class="xcolh"></div><div class="xcolh p">Payer</div></div>
+   ${rows}
+ </div>`;
+}
+// What the payer asked for, and who ended up answering it.
+function docsBlock(s){
+ if(!s.pended)return"";
+ const auto=s.documents_auto_satisfied||[],esc=s.documents_escalated||[],staff=s.documents_supplied_by_staff||{};
+ const autoRows=auto.map(a=>`<div class="dxrow"><span class="ptr">AI</span><span><b>${a.label}</b> <span style="color:var(--sub)">${a.detail||""}</span></span></div>`).join("");
+ const escRows=esc.map(e=>`<div class="dxrow"><span class="ptr" style="background:var(--amberbg);color:var(--amber)">${e.resolved_by}</span>
+   <span><b>${e.label}</b><span class="xd">${e.why}${e.needs_patient_visit?" · patient must return":""}</span></span></div>`).join("");
+ return `<div class="aibox" style="border-color:var(--brand-blue);background:#F6F9FF">
+   <div class="aihdr" style="color:var(--brand-blue)">📎 Payer requested documentation — 277RFAI</div>
+   <div class="noappeal" style="background:var(--bluebg);border-left-color:var(--brand-blue)">
+     ${s.document_routing_summary||""}
+     ${s.document_response_fully_automated?`<div class="rjfix" style="margin-top:5px">Answered automatically — nobody in the practice was interrupted.</div>`:""}</div>
+   ${autoRows?`<div class="phaselbl ph-visit" style="margin-top:0">Already on file — attached by the AI</div>${autoRows}`:""}
+   ${escRows?`<div class="phaselbl ph-post">Not on file — needed a person</div>${escRows}`:""}
+   ${staff.supplied_by?`<div class="attch"><b>${staff.supplied_by}</b> supplied: ${(staff.labels||[]).join(" · ")}${staff.note?` · "${staff.note}"`:""}</div>`:""}
+   ${s.attachment_control_number?`<div class="attch">275 sent · attachment control number <code>${s.attachment_control_number}</code> · ${(s.attachment.documents||[]).length} document(s)</div>`:""}
+ </div>`;
+}
+function renderResult(data){
+ clearSys();
+ const s=data.summary||{},cls=data.status==="completed"?"b-green":data.status==="failed"?"b-red":"b-amber";
+ document.getElementById("wrapP").classList.add("dim");document.getElementById("wrapS").classList.add("dim");
+ document.getElementById("wrapP").classList.remove("active");document.getElementById("wrapS").classList.remove("active");
+ document.getElementById("laneP").innerHTML=waiting("Done ✓");document.getElementById("laneS").innerHTML=waiting("Done ✓");
+ const OUT={balance_due:["b-amber","Balance due"],refund_due:["b-amber","Refund due"],
+   balanced:["b-green","Balanced"],not_applicable:["b-green","Self-pay — n/a"],
+   unresolved:["b-red","Unresolved — in AR"]};
+ const oc=OUT[s.reconciliation_outcome]||["b-amber","—"];
+ const settle=s.reconciliation_outcome==="balance_due"?money(s.balance_due_cents)
+   :s.reconciliation_outcome==="refund_due"?money(s.refund_due_cents):"$0.00";
+ const vr=s.estimate_variance_cents;
+ document.getElementById("result").innerHTML=`<div class="panel result">
+   <span class="b ${cls}">${data.status.replace("_"," ").toUpperCase()}</span>
+   <span class="b ${oc[0]}" style="margin-left:6px">${oc[1]}</span>
+   ${exchangeBlock(s)}
+   ${docsBlock(s)}
+   ${claimOutcomeBlock(s)}
+   ${codingBlock(s)}
+   <div class="phaselbl ph-visit">Visit day — estimate collected at checkout</div>
+   <div class="stats">
+     <div class="stat"><div class="l">Provider</div><div class="v">${s.provider||"—"}</div></div>
+     <div class="stat"><div class="l">Diagnosis</div><div class="v">${s.diagnosis_icd10||"—"}</div></div>
+     <div class="stat"><div class="l">Estimate charged</div><div class="v">${money(s.amount_due_cents)}</div></div>
+     <div class="stat"><div class="l">Payment</div><div class="v" style="text-transform:capitalize">${s.payment_status||"—"}</div></div>
+   </div>
+   <div class="phaselbl ph-post">Post-visit — the payer's actual response (835 ERA)</div>
+   <div class="stats">
+     <div class="stat"><div class="l">Claim</div><div class="v">${s.claim_accepted?"Accepted":"—"}</div></div>
+     <div class="stat"><div class="l">Contractual write-off</div><div class="v">${money(s.write_off_cents)}</div></div>
+     <div class="stat"><div class="l">Patient actually owes</div><div class="v">${money(s.actual_patient_cents)}</div></div>
+     <div class="stat"><div class="l">${oc[1]}</div><div class="v">${settle}</div></div>
+   </div>
+   <div class="phaselbl ph-post">Estimate accuracy &amp; follow-on</div>
+   <div class="stats">
+     <div class="stat"><div class="l">Estimate was off by</div><div class="v">${vr==null?"—":(vr>0?"+":"")+money(Math.abs(vr)).replace("$",vr<0?"-$":"$")}</div></div>
+     <div class="stat"><div class="l">Dispensed</div><div class="v">${s.dispensed?"Yes":"—"}</div></div>
+     <div class="stat"><div class="l">Fraud risk</div><div class="v">${s.fraud_risk==null?"—":s.fraud_risk}${s.fraud_alert?" ⚠":""}</div></div>
+     <div class="stat"><div class="l">Next recall</div><div class="v" style="font-size:13px">${s.recall_due_date||"—"}${s.recall_interval_months?` (${s.recall_interval_months}mo)`:""}</div></div>
+   </div></div>`;
+ log("system",`Encounter <b>${data.status}</b> · settle-up: <b>${oc[1]}</b> ${settle}`);
+}
+function llmLog(data){(data&&data.llm_calls||[]).forEach(c=>{
+ const tag='<span style="color:var(--teal);font-weight:800">LLM</span>';
+ if(c.cached) log("system",`${tag} cache reuse · <b>${pretty(c.agent)}</b> (no API call)`);
+ else log("system",`${tag} called · <b>${pretty(c.agent)}</b> — ${c.provider}/${c.model}`);
+});}
+function render(data){llmLog(data);renderSteps(data);document.getElementById("result").innerHTML="";
+ if(data.status==="awaiting_human")renderGate(data.awaiting_gate);else renderResult(data);}
+
+async function decide(gate,approved,note){
+ if(busy)return;busy=true;const m=META[gate]||{role:"reviewer"};const side=PATIENT_GATES.has(gate)?"patient":"staff";
+ const body={gate_id:gate,approved,actor:m.role,note:note||""};const otp=document.getElementById("otp");if(otp&&!note)body.note=otp.value;
+ const dxn=document.getElementById("dxnote");if(dxn&&!note&&dxn.value.trim())body.note=dxn.value.trim();
+ log(side,`${approved?"approved":"rejected"} — ${gate}`);
+ const lane=document.getElementById(side==="patient"?"laneP":"laneS");
+ if(lane)lane.innerHTML=waiting('<span class="spin"></span> Working… the AI agents are processing this step. This can take a few seconds.');
+ try{
+   const data=await call(`/encounters/${eid}/resume`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   render(data);
+ }catch(e){log("system",`⚠ ${e.message}`);}
+ finally{busy=false;}
+}
+document.getElementById("start").onclick=async()=>{
+ if(busy)return;busy=true;
+ document.getElementById("laneP").innerHTML=waiting('<span class="spin"></span> starting…');
+ document.getElementById("laneS").innerHTML=waiting('<span class="spin"></span> starting…');
+ log("system",`Encounter started · ${preset}`);
+ try{
+   const data=await call("/encounters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(req())});
+   eid=data.encounter_id;render(data);
+ }catch(e){log("system",`⚠ ${e.message}`);document.getElementById("laneP").innerHTML=waiting("Couldn't start — check the activity log.");document.getElementById("laneS").innerHTML=waiting("Idle.");}
+ finally{busy=false;}
+};
+document.getElementById("reset").onclick=()=>{eid=null;
+ document.getElementById("timeline").innerHTML="";document.getElementById("result").innerHTML="";
+ ["wrapP","wrapS"].forEach(i=>{document.getElementById(i).classList.remove("active","dim");});
+ document.getElementById("laneP").innerHTML=waiting("Start an encounter to begin.");
+ document.getElementById("laneS").innerHTML=waiting("Start an encounter to begin.");clearSys();renderSteps(null);};
+(async()=>{try{const h=await call("/health");document.getElementById("prov").textContent="LLM: "+h.provider;}catch(e){}})();
+renderSteps(null);
+</script></body></html>

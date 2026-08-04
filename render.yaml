@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: healthcare-agentic-ai-dental
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Pinned so a future Render default bump can't change the runtime under you.
+      # Matches the Dockerfile and the CI matrix.
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Safe default: no API key required at all. The whole demo runs on a
+      # deterministic offline sandbox model — see docs/external-systems-sandbox.md.
+      - key: LLM_PROVIDER
+        value: sandbox
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_JSON
+        value: "true"
+      # To switch a specific deploy to live Gemini/Groq responses later, add
+      # GEMINI_API_KEY / GROQ_API_KEY as SECRET env vars in the Render dashboard
+      # (Environment tab) and change LLM_PROVIDER above to "gemini" or "groq".
+      # Never put real key values in this file — it lives in the public repo.

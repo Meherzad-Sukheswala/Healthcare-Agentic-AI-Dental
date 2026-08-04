@@ -1,0 +1,24 @@
+"""Slot Finder (single task: find the next available appointment slot). FULL."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+from src.core.orchestrator import Agent, AgentResult
+from src.shared.enums import Automation
+
+
+class SlotFinder(Agent):
+    name = "slot_finder"
+    automation = Automation.FULL
+
+    async def execute(self, ctx) -> AgentResult:
+        npi = ctx.get_result("provider_matcher").get("selected_npi", "")
+        # next business day at 09:00 UTC (deterministic given "now" -> stable enough for demo)
+        start = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        if start.weekday() >= 5:                      # Sat/Sun -> push to Monday
+            start += timedelta(days=7 - start.weekday())
+        return AgentResult.completed({
+            "slot": {"start": start.isoformat(), "duration_min": 30, "provider_npi": npi}
+        })
